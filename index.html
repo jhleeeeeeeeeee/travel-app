@@ -620,17 +620,7 @@ table.sp td{overflow:hidden;}
     <!-- 일정표 -->
     <div class="pane-table-wrap mob-active" id="mobPaneTable">
       <div class="tbl-scroll">
-        <table class="sp" id="mobTable" style="table-layout:fixed;width:100%;"><thead><tr>
-          <th style="width:110px">시간</th>
-          <th style="width:68px" class="sp-col-hide">카테고리</th>
-          <th style="width:auto">내용</th>
-          <th style="width:72px" class="sp-col-hide">비용(₩)</th>
-          <th style="width:64px" class="sp-col-hide">이동수단</th>
-          <th style="width:80px" class="sp-col-hide">소재지</th>
-          <th style="width:95px" class="sp-col-hide">위치</th>
-          <th style="width:75px" class="sp-col-hide">비고</th>
-          <th style="width:36px"></th>
-        </tr></thead>
+        <table class="sp" id="mobTable" style="table-layout:fixed;width:100%;border-collapse:collapse;">
           <tbody id="tblBody"></tbody>
           <tfoot id="tblFoot"></tfoot>
         </table>
@@ -977,7 +967,7 @@ function closeModal(id){document.getElementById(id).classList.add('hidden');}
 
 /* ── STATE ── */
 const SPAIN_ID='spain001';
-const SPAIN_DATA={id:SPAIN_ID,name:'스페인여행',start:'2025-09-12',end:'2025-09-22',color:'#C85A2A',events:{'2025-09-12':[{id:'e001',cat:'move',content:'공항이동',time:'08:00',startTime:'08:00',endTime:'09:30',cost:0,transport:'—',location:'인천공항 제2여객터미널',note:''},{id:'e002',cat:'move',content:'수속, 비행기 탑승',time:'09:30',startTime:'09:30',endTime:'12:00',cost:0,transport:'비행기',location:'',note:''},{id:'e003',cat:'move',content:'바르셀로나 공항 도착',time:'12:00',startTime:'12:00',endTime:'19:30',cost:0,transport:'비행기',location:'엘프라트공항',note:''}],'2025-09-13':[],'2025-09-14':[],'2025-09-15':[],'2025-09-16':[],'2025-09-17':[],'2025-09-18':[],'2025-09-19':[],'2025-09-20':[],'2025-09-21':[],'2025-09-22':[]}};
+const SPAIN_DATA={id:SPAIN_ID,name:'스페인여행',start:'2025-09-12',end:'2025-09-22',color:'#C85A2A',country:'🇪🇸|스페인|EUR|Madrid|ES',events:{'2025-09-12':[{id:'e001',cat:'move',content:'공항이동',time:'08:00',startTime:'08:00',endTime:'09:30',cost:0,transport:'—',location:'인천공항 제2여객터미널',note:''},{id:'e002',cat:'move',content:'수속, 비행기 탑승',time:'09:30',startTime:'09:30',endTime:'12:00',cost:0,transport:'비행기',location:'',note:''},{id:'e003',cat:'move',content:'바르셀로나 공항 도착',time:'12:00',startTime:'12:00',endTime:'19:30',cost:0,transport:'비행기',location:'엘프라트공항',note:''}],'2025-09-13':[],'2025-09-14':[],'2025-09-15':[],'2025-09-16':[],'2025-09-17':[],'2025-09-18':[],'2025-09-19':[],'2025-09-20':[],'2025-09-21':[],'2025-09-22':[]}};
 
 /* ── SUPABASE 연동 ── */
 const SB_URL='https://asqnytxrywjzvggqejdi.supabase.co';
