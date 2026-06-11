@@ -131,10 +131,11 @@ table.sp tr:active td{background:var(--sand);}
 .tl-row{display:flex;height:32px;}
 .tl-row.hr{border-top:1px solid var(--sand3);}
 .tl-row.hf{border-top:.5px solid var(--sand2);}
-.tl-lbl{width:44px;flex-shrink:0;font-size:9px;color:var(--ink3);font-weight:600;padding:5px 6px 0 0;text-align:right;line-height:1;}
+.tl-lbl{width:44px;flex-shrink:0;font-size:9px;color:var(--ink3);font-weight:600;padding:5px 6px 0 0;text-align:right;line-height:1;position:relative;}
 .tl-lbl.dim{opacity:0;}
-.tl-cell{flex:1;border-left:1px solid var(--sand2);cursor:pointer;touch-action:pan-y;}
+.tl-cell{flex:1;border-left:2px solid var(--sand2);cursor:pointer;touch-action:pan-y;position:relative;}
 .tl-cell:active{background:rgba(200,90,42,.06);}
+.tl-dot{position:absolute;right:-5px;top:50%;transform:translateY(-50%);width:8px;height:8px;border-radius:50%;z-index:2;}
 .tl-evts{position:absolute;top:0;left:44px;right:4px;pointer-events:none;touch-action:pan-y;}
 .evb{position:absolute;left:0;right:0;border-radius:8px;overflow:hidden;display:flex;flex-direction:column;cursor:pointer;pointer-events:all;transition:filter .12s;touch-action:pan-y;}
 .evb:active{filter:brightness(.93);}
@@ -1641,7 +1642,9 @@ function tlAddSugg(text){
 function renderMobTimeline(){
   const trip=getTrip(currentId),evts=trip.events[activeDayKey]||[],total=TIMES.length;
   let grid='';
-  TIMES.forEach(t=>{const isH=t.endsWith(':00');grid+=`<div class="tl-row ${isH?'hr':'hf'}"><div class="tl-lbl ${isH?'':'dim'}">${isH?t:''}</div><div class="tl-cell" data-tltime="${t}" data-tldk="${activeDayKey}"></div></div>`;});
+  const CAT_DOT={'eat':'#C85A2A','move':'#2A6B7C','see':'#5A7A5A','rest':'#C8A84B','etc':'#6B6550'};
+  const evtStarts={};evts.forEach(ev=>{const st=ev.startTime||ev.time||'00:00';if(!evtStarts[st])evtStarts[st]=ev.cat;});
+  TIMES.forEach(t=>{const isH=t.endsWith(':00');const dot=evtStarts[t]?`<div class="tl-dot" style="background:${CAT_DOT[evtStarts[t]]||'#6B6550'};"></div>`:'';grid+=`<div class="tl-row ${isH?'hr':'hf'}"><div class="tl-lbl ${isH?'':'dim'}">${isH?t:''}${dot}</div><div class="tl-cell" data-tltime="${t}" data-tldk="${activeDayKey}"></div></div>`;});
   let blks='';
   evts.forEach(ev=>{
     const cat=CATS[ev.cat]||CATS.etc;
@@ -1828,7 +1831,9 @@ function renderDeskTable(){
 function renderDeskTimeline(){
   const trip=getTrip(currentId),evts=trip.events[activeDayKey]||[],total=TIMES.length;
   let grid='';
-  TIMES.forEach(t=>{const isH=t.endsWith(':00');grid+=`<div class="tl-row ${isH?'hr':'hf'}"><div class="tl-lbl ${isH?'':'dim'}">${isH?t:''}</div><div class="tl-cell" data-tltime="${t}" data-tldk="${activeDayKey}"></div></div>`;});
+  const CAT_DOT={'eat':'#C85A2A','move':'#2A6B7C','see':'#5A7A5A','rest':'#C8A84B','etc':'#6B6550'};
+  const evtStarts={};evts.forEach(ev=>{const st=ev.startTime||ev.time||'00:00';if(!evtStarts[st])evtStarts[st]=ev.cat;});
+  TIMES.forEach(t=>{const isH=t.endsWith(':00');const dot=evtStarts[t]?`<div class="tl-dot" style="background:${CAT_DOT[evtStarts[t]]||'#6B6550'};"></div>`:'';grid+=`<div class="tl-row ${isH?'hr':'hf'}"><div class="tl-lbl ${isH?'':'dim'}">${isH?t:''}${dot}</div><div class="tl-cell" data-tltime="${t}" data-tldk="${activeDayKey}"></div></div>`;});
   let blks='';
   evts.forEach(ev=>{
     const st=ev.startTime||ev.time||'00:00',et=ev.endTime||'';
