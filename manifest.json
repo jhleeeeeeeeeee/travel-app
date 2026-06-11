@@ -1,0 +1,27 @@
+{
+  "name": "여행 일정 플래너",
+  "short_name": "여행플래너",
+  "description": "여행 일정을 계획하고 체크리스트로 관리하는 앱",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#F5EFE0",
+  "theme_color": "#1C1A14",
+  "lang": "ko",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["travel", "productivity"],
+  "screenshots": []
+}
