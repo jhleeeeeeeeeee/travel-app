@@ -2714,24 +2714,29 @@ async function shareTrip(tripId){
   if(!trip.shareId) trip.shareId='s'+Math.random().toString(36).slice(2,10);
   localStorage.setItem('tpv5_trips',JSON.stringify(trips));
 
+  // Supabase에 공유 데이터 저장 (실패해도 링크 복사는 진행)
   try{
-    // 해당 여행 데이터만 저장 (다른 여행 제외)
     await sbFetch('/rest/v1/shared_trips',{
       method:'POST',
       headers:{'Prefer':'resolution=merge-duplicates,return=minimal'},
       body:JSON.stringify({id:trip.shareId,trip:trip,updated_at:new Date().toISOString()})
     });
-    const url=location.origin+location.pathname+'?share='+trip.shareId;
+  } catch(e){
+    console.error('[Share] 저장 오류:', e);
+  }
+
+  // 저장 성공 여부와 관계없이 링크 복사 + 토스트
+  const url=location.origin+location.pathname+'?share='+trip.shareId;
+  try{
     if(navigator.clipboard){
       await navigator.clipboard.writeText(url);
     } else {
       prompt('공유 링크:', url);
     }
-    showShareToast('링크가 복사됐습니다! 📋');
   } catch(e){
-    console.error('[Share] 오류:', e);
-    alert('공유 링크 생성 실패. 다시 시도해주세요.');
+    prompt('공유 링크:', url);
   }
+  showShareToast('링크가 복사됐습니다! 📋');
 }
 
 function showShareToast(msg){
