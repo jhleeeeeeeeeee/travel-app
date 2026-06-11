@@ -1656,6 +1656,7 @@ function addRow(){
 }
 
 function openEvtModal(dk,time,isEdit,evId){
+  if(window._readOnly) return;
   pendingDayKey=dk;editEvtId=isEdit?evId:null;
   document.getElementById('evtModalTitle').textContent=isEdit?'일정 수정':'일정 추가';
   if(isEdit){
@@ -1700,6 +1701,7 @@ function saveEvt(){
 
 /* ── 시간 팝업 ── */
 function openTimePopup(rowId,dk,anchorEl){
+  if(window._readOnly) return;
   closeTimePopup();
   const trip=getTrip(currentId),r=(trip.events[dk]||[]).find(r=>r.id===rowId);if(!r)return;
   const st=r.startTime||r.time||'09:00',et=r.endTime||TIMES[Math.min(t2i(st)+2,TIMES.length-1)];
@@ -2560,51 +2562,38 @@ async function loadSharedTrip(shareId){
     }
     const trip=data[0].trip;
 
-    // 읽기전용 페이지 렌더링
-    document.body.innerHTML=`
-    <div style="max-width:680px;margin:0 auto;font-family:'DM Sans',sans-serif;background:#F5EFE0;min-height:100vh;">
-      <div style="background:#1C1A14;padding:1rem 1.25rem;display:flex;align-items:center;justify-content:space-between;">
-        <div>
-          <div style="font-size:18px;font-weight:500;color:#fff;">${esc(trip.name||'여행')}</div>
-          <div style="font-size:12px;color:rgba(255,255,255,.5);margin-top:2px;">${trip.start||''} – ${trip.end||''} · 읽기 전용</div>
-        </div>
-        <div style="background:rgba(200,90,42,.2);color:#F0997B;font-size:11px;padding:4px 10px;border-radius:20px;">공유됨</div>
-      </div>
-      <div id="sharedContent" style="padding:1rem;"></div>
-    </div>`;
+    // 읽기전용: 기존 앱 UI 그대로 사용, 수정만 비활성화
+    window._readOnly = true;
+    trips = [trip];
+    currentId = trip.id;
+    activeDayKey = trip.start;
 
-    // 날짜별 일정 렌더링
-    const days=genDays(trip.start,trip.end);
-    let html='';
-    days.forEach((dk,di)=>{
-      const evts=trip.events[dk]||[];
-      if(!evts.length) return;
-      html+=`<div style="margin-bottom:16px;">
-        <div style="font-size:12px;font-weight:500;color:#6B6550;margin-bottom:8px;padding:4px 0;border-bottom:1px solid #D9CEAD;">Day ${di+1} · ${dKR(dk)}</div>`;
-      evts.forEach(ev=>{
-        const cat=CATS[ev.cat]||CATS.etc;
-        const st=ev.startTime||ev.time||'',et=ev.endTime||'';
-        html+=`<div style="background:#fff;border-radius:10px;padding:12px 14px;margin-bottom:8px;border:0.5px solid #EDE5CE;">
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:${(ev.cost||ev.transport||ev.region||ev.note)?'10px':'0'};">
-            <div style="width:32px;height:32px;border-radius:8px;background:rgba(42,107,124,.1);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">${cat.emoji}</div>
-            <div style="flex:1;">
-              <div style="font-size:14px;font-weight:500;color:#1C1A14;">${esc(ev.content||'')}</div>
-              <div style="font-size:12px;color:#6B6550;">${st}${et?'–'+et:''}</div>
-            </div>
-          </div>
-          ${(ev.cost||ev.transport||ev.region||ev.note||ev.location)?`
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;background:#F5EFE0;border-radius:8px;padding:8px;">
-            ${ev.cost?`<div><div style="font-size:10px;color:#6B6550;">💰 비용</div><div style="font-size:12px;color:#1C1A14;">₩${fmtCost(ev.cost)}</div></div>`:''}
-            ${ev.transport&&ev.transport!=='—'?`<div><div style="font-size:10px;color:#6B6550;">🚌 이동수단</div><div style="font-size:12px;color:#1C1A14;">${esc(ev.transport)}</div></div>`:''}
-            ${ev.region?`<div><div style="font-size:10px;color:#6B6550;">📍 소재지</div><div style="font-size:12px;color:#1C1A14;">${esc(ev.region)}</div></div>`:''}
-            ${ev.note?`<div style="grid-column:1/-1;"><div style="font-size:10px;color:#6B6550;">📝 비고</div><div style="font-size:12px;color:#1C1A14;">${esc(ev.note)}</div></div>`:''}
-            ${ev.location&&!isMapUrl(ev.location)?`<div style="grid-column:1/-1;"><div style="font-size:10px;color:#6B6550;">🗺 위치</div><div style="font-size:12px;color:#1C1A14;">${esc(ev.location)}</div></div>`:''}
-          </div>`:''}
-        </div>`;
-      });
-      html+='</div>';
+    // 모든 페이지 숨기기
+    ['archivePage','plannerPage','countryDetailPage','countryInfoPage'].forEach(p=>{
+      const el=document.getElementById(p);if(el)el.classList.add('hidden');
     });
-    document.getElementById('sharedContent').innerHTML=html||'<div style="text-align:center;color:#6B6550;padding:2rem;">등록된 일정이 없습니다</div>';
+
+    // 읽기전용 배너 추가
+    const banner=document.createElement('div');
+    banner.style.cssText='position:fixed;top:0;left:0;right:0;padding:6px;text-align:center;font-size:12px;font-family:DM Sans,sans-serif;font-weight:500;z-index:9999;background:#2A6B7C;color:#fff;';
+    banner.innerHTML='🔒 읽기 전용 · <span style="opacity:.8;">'+esc(trip.name||'여행')+'</span>';
+    document.body.appendChild(banner);
+
+    // 플래너 페이지 열기 (읽기전용)
+    openTrip(trip.id);
+
+    // 저장 버튼 숨기기
+    setTimeout(()=>{
+      const saveBtn=document.getElementById('btnSave');
+      if(saveBtn) saveBtn.style.display='none';
+      const addRowBtn=document.getElementById('btnAddRow');
+      if(addRowBtn) addRowBtn.style.display='none';
+      // 삭제 버튼들 숨기기
+      document.querySelectorAll('.row-del-btn,.tc-del').forEach(b=>b.style.display='none');
+      // 상단 여백
+      const planner=document.getElementById('plannerPage');
+      if(planner) planner.style.paddingTop='32px';
+    },300);
   } catch(e){
     console.error('[Share] 로드 오류:', e);
   }
