@@ -994,6 +994,7 @@ function renderArchive(){
       </div>
       <div class="tc-foot">
         <span class="tc-act" data-edit-trip="${t.id}"><i class="ti ti-edit" style="font-size:11px"></i> 수정하기</span>
+        <span class="tc-act" style="cursor:pointer;" onclick="shareTrip('${t.id}')"><i class="ti ti-share" style="font-size:11px"></i> 공유</span>
         <button class="tc-del" data-del="${t.id}"><i class="ti ti-trash" style="font-size:11px"></i> 삭제</button>
       </div>
     </div>`;
@@ -2496,7 +2497,118 @@ if('serviceWorker' in navigator){
   });
 }
 
+/* ── 여행 공유 ── */
+async function shareTrip(tripId){
+  const trip=getTrip(tripId); if(!trip) return;
+
+  // 공유 ID 생성 (없으면 새로 만들기)
+  if(!trip.shareId) trip.shareId='s'+Math.random().toString(36).slice(2,10);
+  persist();
+
+  try{
+    // Supabase shared_trips 테이블에 upsert
+    await sbFetch('/rest/v1/shared_trips',{
+      method:'POST',
+      headers:{'Prefer':'resolution=merge-duplicates,return=minimal'},
+      body:JSON.stringify({
+        id:trip.shareId,
+        trip:trip,
+        updated_at:new Date().toISOString()
+      })
+    });
+
+    const url=location.origin+location.pathname+'?share='+trip.shareId;
+    // 클립보드 복사
+    if(navigator.clipboard){
+      await navigator.clipboard.writeText(url);
+      showShareToast('링크가 복사됐습니다! 📋');
+    } else {
+      prompt('공유 링크:', url);
+    }
+  } catch(e){
+    console.error('[Share] 오류:', e);
+    alert('공유 링크 생성 실패. 다시 시도해주세요.');
+  }
+}
+
+function showShareToast(msg){
+  let t=document.getElementById('shareToast');
+  if(!t){
+    t=document.createElement('div');
+    t.id='shareToast';
+    t.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#1C1A14;color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;font-family:DM Sans,sans-serif;z-index:9999;transition:opacity .3s;white-space:nowrap;';
+    document.body.appendChild(t);
+  }
+  t.textContent=msg;t.style.opacity='1';t.style.display='block';
+  setTimeout(()=>{t.style.opacity='0';setTimeout(()=>t.style.display='none',300);},2500);
+}
+
+// 공유 링크로 접속 시 읽기전용 뷰
+async function loadSharedTrip(shareId){
+  try{
+    const data=await sbFetch('/rest/v1/shared_trips?id=eq.'+shareId+'&select=trip');
+    if(!data||!data.length){
+      document.body.innerHTML='<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;font-family:DM Sans,sans-serif;color:#6B6550;gap:12px;"><div style="font-size:40px;">🗺</div><div style="font-size:16px;font-weight:500;color:#1C1A14;">공유 링크를 찾을 수 없습니다</div><div style="font-size:13px;">링크가 만료됐거나 잘못된 주소입니다</div></div>';
+      return;
+    }
+    const trip=data[0].trip;
+
+    // 읽기전용 페이지 렌더링
+    document.body.innerHTML=`
+    <div style="max-width:680px;margin:0 auto;font-family:'DM Sans',sans-serif;background:#F5EFE0;min-height:100vh;">
+      <div style="background:#1C1A14;padding:1rem 1.25rem;display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div style="font-size:18px;font-weight:500;color:#fff;">${esc(trip.name||'여행')}</div>
+          <div style="font-size:12px;color:rgba(255,255,255,.5);margin-top:2px;">${trip.start||''} – ${trip.end||''} · 읽기 전용</div>
+        </div>
+        <div style="background:rgba(200,90,42,.2);color:#F0997B;font-size:11px;padding:4px 10px;border-radius:20px;">공유됨</div>
+      </div>
+      <div id="sharedContent" style="padding:1rem;"></div>
+    </div>`;
+
+    // 날짜별 일정 렌더링
+    const days=genDays(trip.start,trip.end);
+    let html='';
+    days.forEach((dk,di)=>{
+      const evts=trip.events[dk]||[];
+      if(!evts.length) return;
+      html+=`<div style="margin-bottom:16px;">
+        <div style="font-size:12px;font-weight:500;color:#6B6550;margin-bottom:8px;padding:4px 0;border-bottom:1px solid #D9CEAD;">Day ${di+1} · ${dKR(dk)}</div>`;
+      evts.forEach(ev=>{
+        const cat=CATS[ev.cat]||CATS.etc;
+        const st=ev.startTime||ev.time||'',et=ev.endTime||'';
+        html+=`<div style="background:#fff;border-radius:10px;padding:12px 14px;margin-bottom:8px;border:0.5px solid #EDE5CE;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:${(ev.cost||ev.transport||ev.region||ev.note)?'10px':'0'};">
+            <div style="width:32px;height:32px;border-radius:8px;background:rgba(42,107,124,.1);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">${cat.emoji}</div>
+            <div style="flex:1;">
+              <div style="font-size:14px;font-weight:500;color:#1C1A14;">${esc(ev.content||'')}</div>
+              <div style="font-size:12px;color:#6B6550;">${st}${et?'–'+et:''}</div>
+            </div>
+          </div>
+          ${(ev.cost||ev.transport||ev.region||ev.note||ev.location)?`
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;background:#F5EFE0;border-radius:8px;padding:8px;">
+            ${ev.cost?`<div><div style="font-size:10px;color:#6B6550;">💰 비용</div><div style="font-size:12px;color:#1C1A14;">₩${fmtCost(ev.cost)}</div></div>`:''}
+            ${ev.transport&&ev.transport!=='—'?`<div><div style="font-size:10px;color:#6B6550;">🚌 이동수단</div><div style="font-size:12px;color:#1C1A14;">${esc(ev.transport)}</div></div>`:''}
+            ${ev.region?`<div><div style="font-size:10px;color:#6B6550;">📍 소재지</div><div style="font-size:12px;color:#1C1A14;">${esc(ev.region)}</div></div>`:''}
+            ${ev.note?`<div style="grid-column:1/-1;"><div style="font-size:10px;color:#6B6550;">📝 비고</div><div style="font-size:12px;color:#1C1A14;">${esc(ev.note)}</div></div>`:''}
+            ${ev.location&&!isMapUrl(ev.location)?`<div style="grid-column:1/-1;"><div style="font-size:10px;color:#6B6550;">🗺 위치</div><div style="font-size:12px;color:#1C1A14;">${esc(ev.location)}</div></div>`:''}
+          </div>`:''}
+        </div>`;
+      });
+      html+='</div>';
+    });
+    document.getElementById('sharedContent').innerHTML=html||'<div style="text-align:center;color:#6B6550;padding:2rem;">등록된 일정이 없습니다</div>';
+  } catch(e){
+    console.error('[Share] 로드 오류:', e);
+  }
+}
+
 window.addEventListener('DOMContentLoaded',async()=>{
+  // 공유 링크 감지
+  const urlParams=new URLSearchParams(location.search);
+  const shareId=urlParams.get('share');
+  if(shareId){ loadSharedTrip(shareId); return; }
+
   // 페이지 상태 먼저 읽기 (showPage 호출 전)
   const savedPage=sessionStorage.getItem('tpv5_page')||'archivePage';
   const savedTripId=sessionStorage.getItem('tpv5_current_trip');
