@@ -359,8 +359,10 @@ table.sp tr:active td{background:var(--sand);}
   /* 모바일 pl-content: flex column */
   .pl-content{flex:1;overflow:hidden;}
   /* 패널 전환 */
-  .pane-table-wrap,.tl-wrap-outer,.cl-panel{display:none;flex:1;flex-direction:column;overflow:hidden;}
-  .pane-table-wrap.mob-active,.tl-wrap-outer.mob-active,.cl-panel.mob-active{display:flex;}
+  .pane-table-wrap,.cl-panel{display:none;flex:1;flex-direction:column;overflow:hidden;}
+  .tl-wrap-outer{display:none;flex:1;flex-direction:column;overflow-y:scroll!important;-webkit-overflow-scrolling:touch;}
+  .pane-table-wrap.mob-active,.cl-panel.mob-active{display:flex;}
+  .tl-wrap-outer.mob-active{display:flex;}
   /* 숨길 컬럼 */
   .sp-col-hide{display:none!important;}
   .row-del-btn{opacity:1!important;}
@@ -401,7 +403,7 @@ table.sp td{overflow:hidden;}
 /* 패널 리사이저 강화 */
 
 /* 인라인 편집 */
-.editable-cell{cursor:pointer;position:relative;max-width:100%;overflow:hidden;}
+.editable-cell{cursor:pointer;position:relative;max-width:100%;overflow:hidden;min-height:36px;display:flex;align-items:center;}
 .editable-cell:hover{background:rgba(200,90,42,.05);}
 .editable-cell:hover .ti-pencil{opacity:.5!important;}
 .inline-input{width:100%;font-family:'DM Sans',sans-serif;font-size:16px;border:1.5px solid var(--terra);border-radius:6px;padding:4px 7px;background:var(--white);color:var(--ink);outline:none;box-sizing:border-box;min-width:0;}
@@ -604,16 +606,16 @@ table.sp .editable-cell .ci{display:block;padding:4px 8px;min-height:36px;line-h
     <!-- 일정표 -->
     <div class="pane-table-wrap mob-active" id="mobPaneTable">
       <div class="tbl-scroll">
-        <table class="sp" id="mobTable"><thead><tr>
+        <table class="sp" id="mobTable" style="table-layout:fixed;width:100%;"><thead><tr>
           <th style="width:110px">시간</th>
           <th style="width:68px" class="sp-col-hide">카테고리</th>
-          <th>내용</th>
+          <th style="width:auto">내용</th>
           <th style="width:72px" class="sp-col-hide">비용(₩)</th>
           <th style="width:64px" class="sp-col-hide">이동수단</th>
           <th style="width:80px" class="sp-col-hide">소재지</th>
           <th style="width:95px" class="sp-col-hide">위치</th>
           <th style="width:75px" class="sp-col-hide">비고</th>
-          <th style="width:32px"></th>
+          <th style="width:36px"></th>
         </tr></thead>
           <tbody id="tblBody"></tbody>
           <tfoot id="tblFoot"></tfoot>
