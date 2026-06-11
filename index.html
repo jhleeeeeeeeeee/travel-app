@@ -403,17 +403,12 @@ table.sp td{overflow:hidden;}
 /* 패널 리사이저 강화 */
 
 /* 인라인 편집 */
-.editable-cell{cursor:pointer;position:relative;max-width:100%;overflow:hidden;min-height:36px;display:flex;align-items:center;}
+.editable-cell{cursor:pointer;position:relative;width:100%;box-sizing:border-box;}
 .editable-cell:hover{background:rgba(200,90,42,.05);}
-.editable-cell:hover .ti-pencil{opacity:.5!important;}
-.inline-input{width:100%;font-family:'DM Sans',sans-serif;font-size:16px;border:1.5px solid var(--terra);border-radius:6px;padding:4px 7px;background:var(--white);color:var(--ink);outline:none;box-sizing:border-box;min-width:0;}
-.inline-select{width:100%;font-family:'DM Sans',sans-serif;font-size:14px;border:1.5px solid var(--terra);border-radius:6px;padding:4px 6px;background:var(--white);color:var(--ink);outline:none;cursor:pointer;-webkit-appearance:none;box-sizing:border-box;min-width:0;max-width:100%;}
-@media(max-width:680px){.inline-select{font-size:16px;padding:6px 4px;}}
+.inline-input{width:100%;font-family:'DM Sans',sans-serif;font-size:16px;border:1.5px solid var(--terra);border-radius:6px;padding:6px 8px;background:var(--white);color:var(--ink);outline:none;box-sizing:border-box;}
+.inline-select{width:100%;font-family:'DM Sans',sans-serif;font-size:16px;border:1.5px solid var(--terra);border-radius:6px;padding:6px 6px;background:var(--white);color:var(--ink);outline:none;cursor:pointer;-webkit-appearance:none;box-sizing:border-box;}
 .inline-input:focus,.inline-select:focus{box-shadow:0 0 0 3px rgba(200,90,42,.12);}
-/* 셀 내용 넘침 방지 */
-table.sp td .ci{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
-table.sp td{overflow:hidden;max-width:0;}
-table.sp .editable-cell .ci{display:block;padding:4px 8px;min-height:36px;line-height:1.4;}
+table.sp td{overflow:hidden;}
 </style>
 </head>
 <body>
@@ -1094,15 +1089,14 @@ function makeEditableCell(r, field, display, inputType='text', options=null){
   const val = r[field]||'';
   const isEmpty = !val || val==='—';
   if(options){
-    return `<div class="ci editable-cell" style="padding:2px 4px;">
+    return `<div class="ci editable-cell" style="padding:2px 4px;min-height:36px;">
       <select class="inline-select" data-edit="${r.id}" data-field="${field}" data-dk="${activeDayKey}" onchange="saveInlineField(this)">
         ${options.map(o=>`<option value="${o.val||o}" ${(r[field]||'')===(o.val||o)?'selected':''}>${o.label||o}</option>`).join('')}
       </select>
     </div>`;
   }
-  return `<div class="ci editable-cell ${isEmpty?'empty':''}" data-edit="${r.id}" data-field="${field}" data-dk="${activeDayKey}" onclick="startInlineEdit(this)" style="overflow:hidden;">
-    <span class="cell-display" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0;">${display}</span>
-    <i class="ti ti-pencil" style="font-size:10px;opacity:0;flex-shrink:0;color:var(--terra);margin-left:4px;"></i>
+  return `<div class="ci editable-cell ${isEmpty?'empty':''}" data-edit="${r.id}" data-field="${field}" data-dk="${activeDayKey}" onclick="startInlineEdit(this)" style="min-height:36px;padding:6px 8px;">
+    <span class="cell-display" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0;font-size:13px;">${display}</span>
   </div>`;
 }
 
