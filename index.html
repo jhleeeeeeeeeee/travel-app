@@ -1364,23 +1364,47 @@ function renderMobTimeline(){
     const si=t2i(st),ei=et?t2i(et):si+1,dur=Math.max(ei-si,1),top=si*ROW_H,h=dur*ROW_H;
     const isSelected=window._tlChecklistEvtId===ev.id;
 
-    // 표시할 정보를 높이 기반으로 순차 추가
-    const pad=h<32?'3px 6px':'6px 8px';
-    let body=`<div style="font-size:${h<36?'10px':'11px'};font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:1px;">${cat.emoji} ${esc(ev.content||'')}</div>`;
+    const pad=h<32?'3px 6px':'7px 10px';
 
-    // 각 항목을 태그 형태로 쌓기
-    const tags=[];
-    if(h>36) tags.push(`<span style="opacity:.8">${st}${et?'–'+et:''}</span>`);
-    if(h>60 && ev.cost) tags.push(`<span>₩${fmtCost(ev.cost)}</span>`);
-    if(h>80 && ev.transport && ev.transport!=='—') tags.push(`<span>${ev.transport}</span>`);
-    if(h>100 && ev.region) tags.push(`<span>📍${esc(ev.region)}</span>`);
-    if(h>120 && ev.note) tags.push(`<span style="opacity:.75">📝${esc(ev.note)}</span>`);
-    if(h>140 && ev.location && !isMapUrl(ev.location)) tags.push(`<span style="opacity:.75">🗺 ${esc(ev.location.length>15?ev.location.slice(0,15)+'…':ev.location)}</span>`);
+    // 제목
+    let body=`<div style="font-size:${h<36?'10px':'12px'};font-weight:500;color:#133E48;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:${h>50?'6px':'0'};">${cat.emoji} ${esc(ev.content||'')}</div>`;
 
-    if(tags.length){
-      body+=`<div style="display:flex;flex-direction:column;gap:1px;margin-top:2px;">`;
-      tags.forEach(t=>{ body+=`<div style="font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${t}</div>`; });
+    if(h>120){
+      // 넓은 공간: 2열 그리드 카드
+      const cells=[];
+      if(st) cells.push(['⏰ 시간',`${st}${et?'–'+et:''}`]);
+      if(ev.cost) cells.push(['💰 비용','₩'+fmtCost(ev.cost)]);
+      if(ev.transport&&ev.transport!=='—') cells.push(['🚌 이동수단',esc(ev.transport)]);
+      if(ev.region) cells.push(['📍 소재지',esc(ev.region)]);
+      if(ev.note) cells.push(['📝 비고',esc(ev.note)]);
+      if(ev.location&&!isMapUrl(ev.location)) cells.push(['🗺 위치',esc(ev.location.length>18?ev.location.slice(0,18)+'…':ev.location)]);
+
+      if(cells.length){
+        body+=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;">`;
+        cells.forEach(([lbl,val],ci)=>{
+          const full=(lbl.includes('비고')||lbl.includes('위치'));
+          body+=`<div style="${full?'grid-column:1/-1;':''}background:rgba(255,255,255,.55);border-radius:6px;padding:4px 7px;">
+            <div style="font-size:9px;color:#4A7A8A;margin-bottom:1px;">${lbl}</div>
+            <div style="font-size:11px;font-weight:500;color:#133E48;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${val}</div>
+          </div>`;
+        });
+        body+=`</div>`;
+      }
+    } else if(h>50){
+      // 중간 공간: 태그 형태
+      const tags=[];
+      if(st) tags.push(`⏰ ${st}${et?'–'+et:''}`);
+      if(ev.cost) tags.push(`💰 ₩${fmtCost(ev.cost)}`);
+      if(ev.transport&&ev.transport!=='—') tags.push(`🚌 ${esc(ev.transport)}`);
+      if(ev.region) tags.push(`📍 ${esc(ev.region)}`);
+      if(ev.note) tags.push(`📝 ${esc(ev.note)}`);
+      if(ev.location&&!isMapUrl(ev.location)) tags.push(`🗺 ${esc(ev.location.length>12?ev.location.slice(0,12)+'…':ev.location)}`);
+      body+=`<div style="display:flex;flex-wrap:wrap;gap:3px;">`;
+      tags.forEach(t=>{ body+=`<span style="background:rgba(255,255,255,.6);border-radius:5px;padding:2px 6px;font-size:10px;color:#2A5060;">${t}</span>`; });
       body+=`</div>`;
+    } else if(h>30){
+      // 좁은 공간: 시간만
+      body+=`<div style="font-size:10px;color:#2A5060;opacity:.85;">${st}${et?'–'+et:''}</div>`;
     }
 
     blks+=`<div class="evb evb-${ev.cat}" style="top:${top+1}px;height:${h-2}px;padding:${pad};overflow:hidden;${isSelected?'outline:2px solid #C85A2A;outline-offset:-2px;':''}" data-mobtlid="${ev.id}" data-mobtldk="${activeDayKey}">${body}</div>`;
