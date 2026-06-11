@@ -2945,42 +2945,44 @@ async function loadSharedTrip(shareId){
     }
     const trip=data[0].trip;
 
-    // 읽기전용: 해당 여행만 플래너로 표시
+    // 읽기전용 설정
     window._readOnly = true;
-    trips = [trip];  // 해당 여행만 (다른 여행 제외)
+    trips = [trip];
     currentId = trip.id;
     activeDayKey = trip.start;
 
-    // 모든 페이지 숨기기
-    ['archivePage','plannerPage','countryDetailPage','countryInfoPage'].forEach(p=>{
-      const el=document.getElementById(p);if(el)el.classList.add('hidden');
-    });
-
     // 읽기전용 배너
     const banner=document.createElement('div');
+    banner.id='readOnlyBanner';
     banner.style.cssText='position:fixed;top:0;left:0;right:0;padding:6px;text-align:center;font-size:12px;font-family:DM Sans,sans-serif;font-weight:500;z-index:9999;background:#2A6B7C;color:#fff;';
     banner.innerHTML='🔒 읽기 전용 &nbsp;·&nbsp; '+esc(trip.name||'여행')+'<span style="opacity:.6;font-size:11px;margin-left:8px;">'+((trip.start||'')+'~'+(trip.end||''))+'</span>';
     document.body.appendChild(banner);
 
-    // 플래너 열기
+    // 플래너 열기 (showPage 포함)
     openTrip(trip.id);
+
+    // 데스크탑이면 강제 렌더링
+    setTimeout(()=>{
+      if(!isMobile()){
+        const split=document.getElementById('desktopSplit');
+        if(split) split.style.display='flex';
+        renderDeskTable();renderDeskTimeline();renderDeskChecklist();
+      }
+    },200);
 
     // 수정 불가 UI 처리
     setTimeout(()=>{
-      // 저장/추가/삭제/공유/뒤로가기 버튼 숨기기
       ['saveBtn','btnAddRow'].forEach(id=>{
         const el=document.getElementById(id);if(el)el.style.display='none';
       });
       document.querySelectorAll('.row-del-btn,.tc-del,.tc-act').forEach(b=>b.style.display='none');
-      // 뒤로가기 버튼 제거
       const backBtn=document.getElementById('btnBackPlanner');
       if(backBtn) backBtn.style.display='none';
-      // 상단 패딩 (배너 공간)
       const planner=document.getElementById('plannerPage');
       if(planner) planner.style.paddingTop='30px';
-    },400);
-  } catch(e){
-    console.error('[Share] 로드 오류:', e);
+    },500);
+  } catch(e){\n    console.error('[Share] 로드 오류:', e);
+    document.body.innerHTML='<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;font-family:DM Sans,sans-serif;color:#6B6550;gap:12px;"><div style="font-size:40px;">⚠️</div><div style="font-size:16px;font-weight:500;color:#1C1A14;">공유 링크 로드 실패</div><div style="font-size:13px;">잠시 후 다시 시도해주세요</div></div>';
   }
 }
 
