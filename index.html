@@ -697,7 +697,6 @@ table.sp td{overflow:hidden;}
   <nav class="bottom-nav" id="bottomNav">
     <button class="bnav-btn active" id="bnavTable" data-tab="table"><i class="ti ti-table"></i>일정표</button>
     <button class="bnav-btn" id="bnavTl" data-tab="tl"><i class="ti ti-timeline"></i>타임라인</button>
-    <button class="bnav-btn" id="bnavCl" data-tab="cl"><i class="ti ti-checklist"></i>체크리스트<span class="bnav-badge hidden" id="bnavBadge"></span></button>
   </nav>
 </div>
 
@@ -1144,33 +1143,139 @@ function saveInlineField(sel){
 function renderMobTable(){
   const trip=getTrip(currentId),evts=trip.events[activeDayKey]||[];
   let total=0;
+  const expandedId=window._mobExpandedId||null;
+
   document.getElementById('tblBody').innerHTML=evts.map(r=>{
     total+=Number(r.cost)||0;
-    const cat=CATS[r.cat]||CATS.etc,st=r.startTime||r.time||'',et=r.endTime||'';
-    const timeDisp=st?(et?`${st}–${et}`:st):'시간...';
-    const locDisp=r.location?(isMapUrl(r.location)?`<a href="${esc(r.location)}" target="_blank" class="pin-link"><i class="ti ti-map-pin"></i>지도</a>`:esc(r.location)):'위치...';
-    const catOpts=[
-      {val:'eat',label:'🍽 식사'},{val:'move',label:'🚗 이동'},{val:'see',label:'🔭 관광'},
-      {val:'rest',label:'🛏 숙박'},{val:'etc',label:'• 기타'}
-    ];
-    const transportOpts=['—','도보','버스','지하철','택시/우버','렌터카','기차','비행기','배/선박'];
-    const contentDisp=`${cat.emoji} ${esc(r.content)||'내용 입력...'}`;
-    return `<tr data-rowid="${r.id}" data-dk="${activeDayKey}">
-      <td><div class="ci time-cell ${st?'':'empty'}" data-tc="${r.id}" data-dk="${activeDayKey}" style="cursor:pointer;font-size:11px;">${timeDisp}</div></td>
-      <td class="sp-col-hide">${makeEditableCell(r,'cat',`<span class="cat-badge cb-${r.cat}">${cat.emoji} ${cat.label}</span>`,null,catOpts)}</td>
-      <td>${makeEditableCell(r,'content',contentDisp)}</td>
-      <td class="sp-col-hide">${makeEditableCell(r,'cost',r.cost?'₩'+fmtCost(r.cost):'—','number')}</td>
-      <td class="sp-col-hide">${makeEditableCell(r,'transport',r.transport||'—',null,transportOpts.map(v=>({val:v,label:v})))}</td>
-      <td class="sp-col-hide">${makeEditableCell(r,'region',esc(r.region)||'소재지...')}</td>
-      <td class="sp-col-hide">${makeEditableCell(r,'location',locDisp)}</td>
-      <td class="sp-col-hide">${makeEditableCell(r,'note',esc(r.note)||'—')}</td>
-      <td><div class="ci" style="justify-content:center"><button class="row-del-btn" data-rdel="${r.id}" data-dk="${activeDayKey}"><i class="ti ti-trash"></i></button></div></td>
+    const cat=CATS[r.cat]||CATS.etc;
+    const st=r.startTime||r.time||'',et=r.endTime||'';
+    const timeDisp=st?(et?st+'–'+et:st):'시간 미설정';
+    const isExpanded=expandedId===r.id;
+    const locLink=r.location?(isMapUrl(r.location)?
+      `<a href="${esc(r.location)}" target="_blank" style="color:#C85A2A;display:flex;align-items:center;gap:3px;font-size:13px;text-decoration:none;"><i class="ti ti-map-pin" style="font-size:12px;"></i>${esc(r.location.length>30?r.location.slice(0,30)+'…':r.location)}</a>`:
+      `<span style="font-size:13px;">${esc(r.location)}</span>`):'—';
+
+    return `<tr data-rowid="${r.id}">
+      <td colspan="9" style="padding:0;border-bottom:8px solid var(--sand);">
+        <div style="background:var(--white);border-radius:12px;overflow:hidden;border:${isExpanded?'1.5px solid #C85A2A':'0.5px solid var(--sand2)'};">
+          <div class="mob-card-header" data-cardid="${r.id}" style="display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;">
+            <div style="width:34px;height:34px;border-radius:9px;background:rgba(${r.cat==='eat'?'200,90,42':r.cat==='move'?'42,107,124':r.cat==='see'?'90,122,90':r.cat==='rest'?'200,168,75':'107,101,80'},.12);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">${cat.emoji}</div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:14px;font-weight:500;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(r.content)||'내용 없음'}</div>
+              <div style="font-size:12px;color:var(--ink3);margin-top:1px;">${timeDisp}</div>
+            </div>
+            <i class="ti ti-chevron-${isExpanded?'up':'down'}" style="font-size:16px;color:${isExpanded?'#C85A2A':'var(--ink3)'};flex-shrink:0;"></i>
+          </div>
+          ${isExpanded?`
+          <div style="border-top:0.5px solid var(--sand2);padding:12px 14px;display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div>
+              <div style="font-size:11px;color:var(--ink3);margin-bottom:3px;text-transform:uppercase;letter-spacing:.04em;">카테고리</div>
+              <div style="font-size:13px;color:var(--ink);">${cat.emoji} ${cat.label}</div>
+            </div>
+            <div>
+              <div style="font-size:11px;color:var(--ink3);margin-bottom:3px;text-transform:uppercase;letter-spacing:.04em;">비용</div>
+              <div style="font-size:13px;color:var(--ink);">${r.cost?'₩'+fmtCost(r.cost):'—'}</div>
+            </div>
+            <div>
+              <div style="font-size:11px;color:var(--ink3);margin-bottom:3px;text-transform:uppercase;letter-spacing:.04em;">이동수단</div>
+              <div style="font-size:13px;color:var(--ink);">${r.transport&&r.transport!=='—'?r.transport:'—'}</div>
+            </div>
+            <div>
+              <div style="font-size:11px;color:var(--ink3);margin-bottom:3px;text-transform:uppercase;letter-spacing:.04em;">소재지</div>
+              <div style="font-size:13px;color:var(--ink);">${r.region||'—'}</div>
+            </div>
+            <div style="grid-column:1/-1;">
+              <div style="font-size:11px;color:var(--ink3);margin-bottom:3px;text-transform:uppercase;letter-spacing:.04em;">위치</div>
+              <div>${locLink}</div>
+            </div>
+            <div style="grid-column:1/-1;">
+              <div style="font-size:11px;color:var(--ink3);margin-bottom:3px;text-transform:uppercase;letter-spacing:.04em;">비고</div>
+              <div style="font-size:13px;color:var(--ink);">${r.note||'—'}</div>
+            </div>
+          </div>
+          <div style="padding:8px 14px;border-top:0.5px solid var(--sand2);display:flex;justify-content:space-between;align-items:center;background:var(--sand);">
+            <button class="mob-card-time" data-tc="${r.id}" data-dk="${activeDayKey}" style="font-family:'DM Sans',sans-serif;font-size:12px;color:var(--terra);background:rgba(200,90,42,.08);border:1px solid rgba(200,90,42,.2);border-radius:7px;padding:5px 10px;cursor:pointer;display:flex;align-items:center;gap:4px;"><i class="ti ti-clock" style="font-size:12px;"></i>${timeDisp}</button>
+            <div style="display:flex;gap:6px;">
+              <button class="mob-card-edit" data-eid="${r.id}" data-dk="${activeDayKey}" style="font-family:'DM Sans',sans-serif;font-size:12px;background:var(--white);border:0.5px solid var(--sand3);border-radius:7px;padding:5px 12px;cursor:pointer;color:var(--ink3);">수정</button>
+              <button class="row-del-btn" data-rdel="${r.id}" data-dk="${activeDayKey}" style="font-family:'DM Sans',sans-serif;font-size:12px;background:#FAECE7;border:0.5px solid #F0997B;border-radius:7px;padding:5px 12px;cursor:pointer;color:#993C1D;">삭제</button>
+            </div>
+          </div>
+          `:''}
+        </div>
+      </td>
     </tr>`;
   }).join('');
-  document.getElementById('tblFoot').innerHTML=`<tr class="tfoot-total"><td colspan="3" style="text-align:right;color:var(--ink3)">합계</td><td><strong>₩${fmtCost(total)}</strong></td><td colspan="5"></td></tr>`;
+  document.getElementById('tblFoot').innerHTML='';
 }
 
-/* ── 모바일 타임라인 ── */
+
+/* ── 타임라인 인라인 체크리스트 ── */
+function renderMobTimelineChecklist(){
+  const existing=document.getElementById('tlInlineChecklist');
+  if(existing) existing.remove();
+  const eid=window._tlChecklistEvtId;
+  const dk=window._tlChecklistDk||activeDayKey;
+  if(!eid) return;
+
+  const trip=getTrip(currentId); if(!trip) return;
+  const ev=(trip.events[dk]||[]).find(e=>e.id===eid); if(!ev) return;
+  const cl=getChecklist();
+  const items=cl[eid]||[];
+  const done=items.filter(i=>i.done).length;
+  const suggs=getSuggestions(ev);
+
+  const wrap=document.createElement('div');
+  wrap.id='tlInlineChecklist';
+  wrap.style.cssText='margin:8px;background:var(--white);border-radius:14px;border:1.5px solid #C85A2A;overflow:hidden;';
+
+  wrap.innerHTML=`
+    <div style="padding:10px 14px;background:#FAECE7;display:flex;align-items:center;justify-content:space-between;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <i class="ti ti-checklist" style="font-size:16px;color:#C85A2A;"></i>
+        <span style="font-size:13px;font-weight:500;color:#993C1D;">${esc(ev.content||'일정')} 체크리스트</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        ${items.length?`<span style="font-size:11px;color:#993C1D;background:#fff;border-radius:999px;padding:2px 8px;">${done}/${items.length}</span>`:''}
+        <button onclick="window._tlChecklistEvtId=null;renderMobTimelineChecklist();" style="background:none;border:none;cursor:pointer;color:#993C1D;font-size:16px;padding:0;"><i class="ti ti-x"></i></button>
+      </div>
+    </div>
+    <div id="tlClItems" style="padding:6px 14px;">
+      ${items.length?items.map(item=>`
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:0.5px solid var(--sand2);">
+          <div onclick="tlToggleItem('${item.id}')" style="width:20px;height:20px;border-radius:6px;${item.done?'background:#5A7A5A;':'border:1.5px solid var(--sand3);background:var(--white);'}display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;">
+            ${item.done?'<i class="ti ti-check" style="font-size:12px;color:#fff;"></i>':''}
+          </div>
+          <span style="flex:1;font-size:13px;color:var(--ink);${item.done?'text-decoration:line-through;color:var(--ink3);':''}">${esc(item.text)}</span>
+          <button onclick="tlDelItem('${item.id}')" style="background:none;border:none;cursor:pointer;color:var(--sand3);font-size:14px;padding:2px;"><i class="ti ti-x"></i></button>
+        </div>`).join('')
+      :`<div style="padding:8px 0;">
+        <div style="font-size:11px;color:var(--ink3);margin-bottom:6px;">추천 항목</div>
+        ${suggs.map(s=>`<div onclick="tlAddSugg('${esc(s)}')" style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;">
+          <div style="width:20px;height:20px;border-radius:6px;border:1.5px solid #C85A2A;display:flex;align-items:center;justify-content:center;color:#C85A2A;font-size:14px;font-weight:500;">+</div>
+          <span style="font-size:13px;color:var(--ink3);">${esc(s)}</span>
+        </div>`).join('')}
+      </div>`}
+    </div>
+    <div style="padding:8px 14px;border-top:0.5px solid var(--sand2);display:flex;gap:8px;">
+      <input id="tlClInp" placeholder="할 일 추가..." style="flex:1;font-family:'DM Sans',sans-serif;font-size:14px;border:0.5px solid var(--sand3);border-radius:9px;padding:8px 10px;background:var(--sand);color:var(--ink);outline:none;" onkeydown="if(event.key==='Enter')tlAddItem()">
+      <button onclick="tlAddItem()" style="font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;background:#C85A2A;color:#fff;border:none;border-radius:9px;padding:8px 14px;cursor:pointer;">추가</button>
+    </div>`;
+
+  // 타임라인 wrap 뒤에 삽입
+  const tlWrap=document.getElementById('tlWrapMob');
+  if(tlWrap&&tlWrap.parentNode) tlWrap.parentNode.insertAdjacentElement('afterend',wrap);
+}
+
+function tlAddItem(){
+  const inp=document.getElementById('tlClInp'); if(!inp) return;
+  const text=inp.value.trim(); if(!text) return;
+  addClItem(text,window._tlChecklistEvtId,false);
+  inp.value='';
+  renderMobTimelineChecklist();
+}
+function tlToggleItem(id){ toggleClItem(id,false); renderMobTimelineChecklist(); }
+function tlDelItem(id){ delClItem(id,false); renderMobTimelineChecklist(); }
+function tlAddSugg(text){ addClItem(text,window._tlChecklistEvtId,false); renderMobTimelineChecklist(); }
 function renderMobTimeline(){
   const trip=getTrip(currentId),evts=trip.events[activeDayKey]||[],total=TIMES.length;
   let grid='';
@@ -1564,6 +1669,20 @@ document.addEventListener('click',function(e){
   const etDot=t.closest('#etColorPick .color-dot');
   if(etDot){etColor=etDot.dataset.ec;document.querySelectorAll('#etColorPick .color-dot').forEach(d=>d.classList.toggle('sel',d===etDot));return;}
 
+  // 모바일 카드 헤더 탭
+  const mobCardHd=t.closest('.mob-card-header');
+  if(mobCardHd){
+    const cid=mobCardHd.dataset.cardid;
+    window._mobExpandedId=(window._mobExpandedId===cid)?null:cid;
+    renderMobTable();return;
+  }
+  // 모바일 카드 수정 버튼
+  const mobEdit=t.closest('.mob-card-edit');
+  if(mobEdit){openEvtModal(mobEdit.dataset.dk,null,true,mobEdit.dataset.eid);return;}
+  // 모바일 카드 시간 버튼
+  const mobTime=t.closest('.mob-card-time');
+  if(mobTime){openTimePopup(mobTime.dataset.tc,mobTime.dataset.dk,mobTime);return;}
+
   /* 아카이브 */
   if(t.closest('#btnNewTrip')){openNewTripModal();return;}
   if(t.closest('#btnAddCountry')){
@@ -1612,8 +1731,21 @@ document.addEventListener('click',function(e){
   const bnavBtn=t.closest('[data-tab]');if(bnavBtn&&bnavBtn.closest('#bottomNav')){setMobTab(bnavBtn.dataset.tab);return;}
 
   /* 모바일 타임라인 블록 탭 */
-  const mobTlBlock=t.closest('[data-mobtlid]');
-  if(mobTlBlock){clEvtId=mobTlBlock.dataset.mobtlid;document.querySelectorAll('[data-mobtlid]').forEach(b=>b.classList.remove('evb-selected'));mobTlBlock.classList.add('evb-selected');setMobTab('cl');return;}
+    const mobTlBlock=t.closest('[data-mobtlid]');
+  if(mobTlBlock){
+    const eid=mobTlBlock.dataset.mobtlid;
+    const dk=mobTlBlock.dataset.mobtldk;
+    // 같은 블록 다시 탭하면 닫기
+    if(window._tlChecklistEvtId===eid){
+      window._tlChecklistEvtId=null;
+      renderMobTimelineChecklist();
+    } else {
+      window._tlChecklistEvtId=eid;
+      window._tlChecklistDk=dk;
+      renderMobTimelineChecklist();
+    }
+    return;
+  }
 
   /* 데스크탑 타임라인 */
   const tlCell=t.closest('[data-tltime]');if(tlCell){openEvtModal(tlCell.dataset.tldk,tlCell.dataset.tltime);return;}
