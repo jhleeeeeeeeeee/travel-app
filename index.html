@@ -1065,7 +1065,7 @@ function renderArchive(){
       </div>
       <div class="tc-foot">
         <span class="tc-act" data-edit-trip="${t.id}"><i class="ti ti-edit" style="font-size:11px"></i> 수정하기</span>
-        <span class="tc-act" style="cursor:pointer;" onclick="shareTrip('${t.id}')"><i class="ti ti-share" style="font-size:11px"></i> 공유</span>
+        <span class="tc-act" style="cursor:pointer;" onclick="event.stopPropagation();shareTrip('${t.id}')"><i class="ti ti-share" style="font-size:11px"></i> 공유</span>
         <button class="tc-del" data-del="${t.id}"><i class="ti ti-trash" style="font-size:11px"></i> 삭제</button>
       </div>
     </div>`;
@@ -2026,7 +2026,7 @@ document.addEventListener('click',function(e){
     _ctAutoInfos=[];
     openModal('countryAddModal');return;
   }
-  const tripCard=t.closest('.trip-card');if(tripCard&&!t.closest('.tc-del')){openTrip(tripCard.dataset.tid);return;}
+  const tripCard=t.closest('.trip-card');if(tripCard&&!t.closest('.tc-del')&&!t.closest('.tc-act')){openTrip(tripCard.dataset.tid);return;}
   const delBtn=t.closest('[data-del]');if(delBtn){e.stopPropagation();if(!confirm('이 여행을 삭제할까요?'))return;trips=trips.filter(tr=>tr.id!==delBtn.dataset.del);persist();renderArchive();return;}
   const cCard=t.closest('.country-card');if(cCard&&!t.closest('[data-cdel]')){openCountryDetail(cCard.dataset.cid);return;}
   const cdel=t.closest('[data-cdel]');if(cdel){e.stopPropagation();if(!confirm('삭제할까요?'))return;countries=countries.filter(c=>c.id!==cdel.dataset.cdel);persistC();renderArchive();return;}
