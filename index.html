@@ -2981,7 +2981,8 @@ async function loadSharedTrip(shareId){
       const planner=document.getElementById('plannerPage');
       if(planner) planner.style.paddingTop='30px';
     },500);
-  } catch(e){\n    console.error('[Share] 로드 오류:', e);
+  } catch(e){
+    console.error('[Share] 로드 오류:', e);
     document.body.innerHTML='<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;font-family:DM Sans,sans-serif;color:#6B6550;gap:12px;"><div style="font-size:40px;">⚠️</div><div style="font-size:16px;font-weight:500;color:#1C1A14;">공유 링크 로드 실패</div><div style="font-size:13px;">잠시 후 다시 시도해주세요</div></div>';
   }
 }
