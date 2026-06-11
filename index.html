@@ -449,7 +449,7 @@ table.sp td{overflow:hidden;}
       <label style="font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);font-weight:500;display:block;margin-bottom:.5rem;">국가 선택</label>
       <select id="ciCountrySelect" onchange="onCiCountrySelect(this)" style="width:100%;font-family:'DM Sans',sans-serif;font-size:16px;padding:11px 14px;border:1.5px solid var(--sand3);border-radius:10px;background:var(--white);color:var(--ink);-webkit-appearance:none;outline:none;cursor:pointer;">
         <option value="">— 국가를 선택하세요 —</option>
-        <option value="🇰🇷|대한민국|KRW|Seoul|KR">🇰🇷 대한민국</option>
+        <option value="🇰🇷|대한민국|KRW|서울|KR">🇰🇷 대한민국</option>
         <option value="🇯🇵|일본|JPY|Tokyo|JP">🇯🇵 일본</option>
         <option value="🇨🇳|중국|CNY|Beijing|CN">🇨🇳 중국</option>
         <option value="🇹🇼|대만|TWD|Taipei|TW">🇹🇼 대만</option>
@@ -593,6 +593,18 @@ table.sp td{overflow:hidden;}
   </div>
   <div class="pl-sub">
     <div class="day-tabs-bar" id="dayTabsBar"></div>
+    <div id="dayCityBar" style="display:none;align-items:center;gap:8px;padding:6px 12px;background:var(--sand);border-bottom:0.5px solid var(--sand2);">
+      <i class="ti ti-map-pin" style="font-size:13px;color:var(--terra);flex-shrink:0;"></i>
+      <div id="dayCityChip" onclick="openCitySheet()" style="display:flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;border:1px solid var(--terra);background:var(--white);font-size:12px;color:var(--terra);font-weight:500;cursor:pointer;-webkit-tap-highlight-color:transparent;">
+        <span id="dayCityName">—</span>
+        <i class="ti ti-chevron-down" style="font-size:11px;"></i>
+      </div>
+      <div id="dayCityWeather" style="display:flex;align-items:center;gap:5px;margin-left:auto;font-size:12px;color:var(--ink);">
+        <span id="dayCityWIcon" style="font-size:16px;">—</span>
+        <span id="dayCityWTemp" style="font-weight:500;"></span>
+        <span id="dayCityWDesc" style="font-size:11px;color:var(--ink3);"></span>
+      </div>
+    </div>
     <!-- 날씨/환율/여행정보 바 -->
     <div id="tripInfoBar" style="display:none;border-bottom:0.5px solid var(--sand2);">
       <div style="display:flex;align-items:stretch;">
@@ -738,6 +750,7 @@ table.sp td{overflow:hidden;}
       <div class="gl-field"><label>여행 국가</label>
         <select id="etCountry" style="width:100%;font-family:'DM Sans',sans-serif;font-size:16px;padding:10px 14px;border:1.5px solid var(--sand3);border-radius:10px;background:var(--white);color:var(--ink);-webkit-appearance:none;outline:none;">
           <option value="">— 국가 선택 —</option>
+          <option value="🇰🇷|대한민국|KRW|서울|KR">🇰🇷 대한민국</option>
           <option value="🇯🇵|일본|JPY|Tokyo|JP">🇯🇵 일본</option>
           <option value="🇨🇳|중국|CNY|Beijing|CN">🇨🇳 중국</option>
           <option value="🇻🇳|베트남|VND|Hanoi|VN">🇻🇳 베트남</option>
@@ -787,8 +800,9 @@ table.sp td{overflow:hidden;}
     <div class="gl-mb">
       <div class="gl-field"><label>여행 이름</label><input type="text" id="ntName" placeholder="예: 도쿄 벚꽃 여행"></div>
       <div class="gl-field"><label>여행 국가 (선택)</label>
-        <select id="ntCountry" style="width:100%;font-family:'DM Sans',sans-serif;font-size:16px;padding:10px 14px;border:1.5px solid var(--sand3);border-radius:10px;background:var(--white);color:var(--ink);-webkit-appearance:none;outline:none;">
+        <select id="ntCountry" onchange="renderNtCities()" style="width:100%;font-family:'DM Sans',sans-serif;font-size:16px;padding:10px 14px;border:1.5px solid var(--sand3);border-radius:10px;background:var(--white);color:var(--ink);-webkit-appearance:none;outline:none;">
           <option value="">— 국가 선택 —</option>
+          <option value="🇰🇷|대한민국|KRW|서울|KR">🇰🇷 대한민국</option>
           <option value="🇯🇵|일본|JPY|Tokyo|JP">🇯🇵 일본</option>
           <option value="🇨🇳|중국|CNY|Beijing|CN">🇨🇳 중국</option>
           <option value="🇹🇼|대만|TWD|Taipei|TW">🇹🇼 대만</option>
@@ -816,6 +830,10 @@ table.sp td{overflow:hidden;}
           <option value="🇲🇻|몰디브|MVR|Male|MV">🇲🇻 몰디브</option>
           <option value="🇲🇦|모로코|MAD|Casablanca|MA">🇲🇦 모로코</option>
         </select>
+      </div>
+      <div id="ntCityWrap" style="display:none;">
+        <label style="font-size:12px;color:var(--ink3);margin-bottom:6px;display:block;">기본 도시 선택 <span style="opacity:.6;">(Day별로 변경 가능)</span></label>
+        <div id="ntCityGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;"></div>
       </div>
       <div class="preview-name" id="ntPreview">여행 이름을 입력해주세요</div>
       <div class="gl-two-col">
@@ -930,6 +948,16 @@ table.sp td{overflow:hidden;}
 <!-- 시간 팝업 -->
 <div id="timePopupContainer"></div>
 
+<div id="citySheetOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:8000;" onclick="closeCitySheet()"></div>
+<div id="citySheet" style="display:none;position:fixed;bottom:0;left:0;right:0;background:var(--white);border-radius:16px 16px 0 0;padding:16px;z-index:8001;max-height:70vh;overflow-y:auto;">
+  <div style="font-size:13px;font-weight:500;color:var(--ink);margin-bottom:12px;" id="citySheetTitle">도시 선택</div>
+  <div id="citySheetGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;"></div>
+  <div style="display:flex;gap:8px;margin-top:14px;">
+    <button onclick="closeCitySheet()" style="flex:1;padding:10px;border-radius:8px;border:0.5px solid var(--sand3);background:var(--white);font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink3);cursor:pointer;">취소</button>
+    <button onclick="confirmCitySheet()" style="flex:1;padding:10px;border-radius:8px;border:none;background:var(--terra);font-family:'DM Sans',sans-serif;font-size:13px;color:#fff;font-weight:500;cursor:pointer;">선택</button>
+  </div>
+</div>
+
 <script>
 /* ── 상수 ── */
 const ROW_H=32;
@@ -1033,6 +1061,65 @@ let countries=JSON.parse(localStorage.getItem('tpv5_countries')||'[]');
 
 let currentId=null,activeDayKey=null,selColor='#C85A2A';
 let selCatV='etc',editEvtId=null,pendingDayKey=null;
+
+const COUNTRY_CITIES={
+  KR:['서울','부산','제주','인천','대구','대전','광주','수원','강릉','경주','전주','여수'],
+  JP:['도쿄','오사카','교토','삿포로','후쿠오카','나고야','나라','히로시마'],
+  CN:['베이징','상하이','광저우','청두','시안','항저우'],
+  TW:['타이베이','타이중','가오슝','타이난'],
+  VN:['하노이','호치민','다낭','호이안','냐짱'],
+  TH:['방콕','치앙마이','푸켓','파타야','끄라비'],
+  SG:['싱가포르'],
+  ID:['자카르타','발리','족자카르타','수라바야'],
+  PH:['마닐라','세부','보라카이','팔라완'],
+  MY:['쿠알라룸푸르','페낭','코타키나발루','말라카'],
+  HK:['홍콩'],
+  AE:['두바이','아부다비'],
+  TR:['이스탄불','앙카라','카파도키아','안탈리아'],
+  GB:['런던','에든버러','맨체스터','옥스퍼드'],
+  FR:['파리','니스','리옹','마르세유','보르도'],
+  DE:['베를린','뮌헨','함부르크','프랑크푸르트','쾰른'],
+  IT:['로마','밀라노','베네치아','피렌체','나폴리','아말피'],
+  ES:['마드리드','바르셀로나','세비야','발렌시아','그라나다','말라가','마요르카'],
+  PT:['리스본','포르투','알가르브'],
+  CH:['취리히','제네바','베른','루체른','인터라켄'],
+  GR:['아테네','산토리니','미코노스','크레타','로도스'],
+  US:['뉴욕','로스앤젤레스','샌프란시스코','라스베이거스','시카고','마이애미','하와이'],
+  CA:['토론토','밴쿠버','몬트리올','퀘벡'],
+  AU:['시드니','멜버른','브리즈번','케언즈','골드코스트'],
+  NZ:['오클랜드','퀸스타운','크라이스트처치'],
+  MV:['말레','마푸시','바아환경'],
+  MA:['카사블랑카','마라케시','페스','셰프샤우엔']
+};
+
+const CITY_COORDS={
+  '서울':[37.56,126.97],'부산':[35.18,129.08],'제주':[33.50,126.53],'인천':[37.46,126.71],'대구':[35.87,128.60],'대전':[36.35,127.38],'광주':[35.16,126.85],'수원':[37.27,127.01],'강릉':[37.75,128.88],'경주':[35.85,129.22],'전주':[35.82,127.15],'여수':[34.76,127.66],
+  '도쿄':[35.68,139.69],'오사카':[34.69,135.50],'교토':[35.01,135.77],'삿포로':[43.06,141.35],'후쿠오카':[33.59,130.40],'나고야':[35.18,136.91],'나라':[34.68,135.83],'히로시마':[34.39,132.45],
+  '베이징':[39.9,116.4],'상하이':[31.23,121.47],'광저우':[23.13,113.26],'청두':[30.66,104.07],'시안':[34.27,108.95],'항저우':[30.27,120.15],
+  '타이베이':[25.04,121.51],'타이중':[24.15,120.67],'가오슝':[22.63,120.30],'타이난':[22.99,120.21],
+  '하노이':[21.03,105.83],'호치민':[10.82,106.63],'다낭':[16.05,108.22],'호이안':[15.88,108.34],'냐짱':[12.24,109.20],
+  '방콕':[13.75,100.52],'치앙마이':[18.79,98.98],'푸켓':[7.88,98.39],'파타야':[12.93,100.88],'끄라비':[8.09,98.91],
+  '싱가포르':[1.35,103.82],
+  '자카르타':[-6.21,106.85],'발리':[-8.34,115.09],'족자카르타':[-7.80,110.36],'수라바야':[-7.25,112.75],
+  '마닐라':[14.6,121.0],'세부':[10.32,123.89],'보라카이':[11.97,121.92],'팔라완':[9.84,118.74],
+  '쿠알라룸푸르':[3.15,101.7],'페낭':[5.41,100.34],'코타키나발루':[5.98,116.07],'말라카':[2.19,102.25],
+  '홍콩':[22.3,114.17],
+  '두바이':[25.2,55.27],'아부다비':[24.47,54.37],
+  '이스탄불':[41.01,28.95],'앙카라':[39.92,32.85],'카파도키아':[38.64,34.83],'안탈리아':[36.89,30.71],
+  '런던':[51.51,-0.13],'에든버러':[55.95,-3.19],'맨체스터':[53.48,-2.24],'옥스퍼드':[51.75,-1.26],
+  '파리':[48.85,2.35],'니스':[43.71,7.26],'리옹':[45.75,4.83],'마르세유':[43.30,5.37],'보르도':[44.84,-0.58],
+  '베를린':[52.52,13.4],'뮌헨':[48.14,11.58],'함부르크':[53.55,10.0],'프랑크푸르트':[50.11,8.68],'쾰른':[50.94,6.96],
+  '로마':[41.9,12.48],'밀라노':[45.47,9.19],'베네치아':[45.44,12.33],'피렌체':[43.77,11.25],'나폴리':[40.84,14.25],'아말피':[40.63,14.60],
+  '마드리드':[40.42,-3.7],'바르셀로나':[41.38,2.17],'세비야':[37.39,-5.99],'발렌시아':[39.47,-0.38],'그라나다':[37.18,-3.60],'말라가':[36.72,-4.42],'마요르카':[39.57,2.65],
+  '리스본':[38.72,-9.14],'포르투':[41.15,-8.61],'알가르브':[37.02,-8.02],
+  '취리히':[47.38,8.54],'제네바':[46.20,6.14],'베른':[46.95,7.45],'루체른':[47.05,8.31],'인터라켄':[46.69,7.85],
+  '아테네':[37.98,23.73],'산토리니':[36.39,25.46],'미코노스':[37.45,25.33],'크레타':[35.24,25.14],'로도스':[36.43,28.22],
+  '뉴욕':[40.71,-74.01],'로스앤젤레스':[34.05,-118.24],'샌프란시스코':[37.77,-122.42],'라스베이거스':[36.17,-115.14],'시카고':[41.88,-87.63],'마이애미':[25.77,-80.19],'하와이':[21.31,-157.86],
+  '토론토':[43.65,-79.38],'밴쿠버':[49.25,-123.12],'몬트리올':[45.51,-73.55],'퀘벡':[46.81,-71.21],
+  '시드니':[-33.87,151.21],'멜버른':[-37.81,144.96],'브리즈번':[-27.47,153.02],'케언즈':[-16.93,145.77],'골드코스트':[-28.02,153.43],
+  '오클랜드':[-36.86,174.77],'퀸스타운':[-45.03,168.66],'크라이스트처치':[-43.53,172.64],
+  '말레':[4.17,73.51],'카사블랑카':[33.59,-7.62],'마라케시':[31.63,-7.99],'페스':[34.03,-5.00],'셰프샤우엔':[35.17,-5.27]
+};
 let currentCountryId=null,editInfoId=null,currentInfoFilter='전체';
 let mobTab='table',clEvtId='all',dClEvtId='all';
 let _tp=null;
@@ -1115,6 +1202,7 @@ function renderAll(){
 function renderDayTabs(){
   const days=genDays(getTrip(currentId).start,getTrip(currentId).end);
   document.getElementById('dayTabsBar').innerHTML=days.map((d,i)=>`<button class="day-tab ${d===activeDayKey?'active':''}" data-day="${d}">Day ${i+1} <span style="opacity:.55">${dKR(d)}</span></button>`).join('');
+  updateDayCityBar();
 }
 
 function renderSummary(){
@@ -1424,6 +1512,7 @@ async function loadTripInfoBar(){
   // 날씨
   try{
     const wcoords={
+      KR:[37.56,126.97],
       JP:[35.68,139.69],CN:[39.9,116.4],TW:[25.04,121.51],VN:[21.03,105.83],
       TH:[13.75,100.52],SG:[1.35,103.82],ID:[-6.21,106.85],PH:[14.6,121.0],
       MY:[3.15,101.7],HK:[22.3,114.17],AE:[25.2,55.27],TR:[41.01,28.95],
@@ -2207,8 +2296,37 @@ function saveEditTrip(){
   trip.name=name;trip.start=start;trip.end=end;trip.color=etColor;trip.country=etCountryVal;
   persist();closeModal('editTripModal');renderArchive();
 }
+let _ntSelectedCity='';
+let _citySheetSelected='';
+
+function renderNtCities(){
+  const val=document.getElementById('ntCountry').value;
+  const wrap=document.getElementById('ntCityWrap');
+  const grid=document.getElementById('ntCityGrid');
+  if(!val){wrap.style.display='none';_ntSelectedCity='';return;}
+  const parts=val.split('|');
+  const code=parts[4]||'';
+  const cities=COUNTRY_CITIES[code];
+  if(!cities||!cities.length){wrap.style.display='none';_ntSelectedCity='';return;}
+  _ntSelectedCity=cities[0];
+  grid.innerHTML=cities.map(c=>`<div onclick="ntSelectCity('${c}')" id="ntcity_${c}" style="display:flex;align-items:center;gap:6px;padding:7px 10px;border-radius:8px;border:${c===_ntSelectedCity?'1.5px solid var(--terra)':'0.5px solid var(--sand3)'};background:${c===_ntSelectedCity?'rgba(200,90,42,.07)':'var(--white)'};font-size:12px;color:${c===_ntSelectedCity?'var(--terra)':'var(--ink)'};cursor:pointer;-webkit-tap-highlight-color:transparent;"><i class="ti ti-map-pin" style="font-size:12px;flex-shrink:0;"></i>${c}</div>`).join('');
+  wrap.style.display='block';
+}
+function ntSelectCity(city){
+  _ntSelectedCity=city;
+  document.querySelectorAll('#ntCityGrid > div').forEach(el=>{
+    const selected=el.id===`ntcity_${city}`;
+    el.style.border=selected?'1.5px solid var(--terra)':'0.5px solid var(--sand3)';
+    el.style.background=selected?'rgba(200,90,42,.07)':'var(--white)';
+    el.style.color=selected?'var(--terra)':'var(--ink)';
+  });
+}
+
 function openNewTripModal(){
   document.getElementById('ntName').value='';document.getElementById('ntPreview').textContent='여행 이름을 입력해주세요';
+  document.getElementById('ntCountry').value='';
+  document.getElementById('ntCityWrap').style.display='none';
+  _ntSelectedCity='';
   const today=new Date().toISOString().slice(0,10);document.getElementById('ntStart').value=today;
   const d2=new Date();d2.setDate(d2.getDate()+3);document.getElementById('ntEnd').value=d2.toISOString().slice(0,10);
   selColor='#C85A2A';document.querySelectorAll('.color-dot').forEach(o=>o.classList.toggle('sel',o.dataset.c===selColor));
@@ -2217,8 +2335,85 @@ function openNewTripModal(){
 function createTrip(){
   const name=document.getElementById('ntName').value.trim();const s=document.getElementById('ntStart').value,e=document.getElementById('ntEnd').value;
   if(!name){alert('여행 이름을 입력해주세요.');return;}if(!s||!e){alert('날짜를 선택해주세요.');return;}if(s>e){alert('귀국일이 출발일보다 앞에 있습니다.');return;}
-  const trip={id:String(Date.now()),name,start:s,end:e,color:selColor,events:{}};
+  const countryVal=document.getElementById('ntCountry').value||'';
+  const trip={id:String(Date.now()),name,start:s,end:e,color:selColor,country:countryVal,dayCity:{},events:{}};
+  // 모든 날짜에 기본 도시 설정
+  if(_ntSelectedCity){genDays(s,e).forEach(d=>{trip.dayCity[d]=_ntSelectedCity;});}
   genDays(s,e).forEach(d=>{trip.events[d]=[];});trips.push(trip);persist();closeModal('newTripModal');renderArchive();openTrip(trip.id);
+}
+
+/* ── Day별 도시 & 날씨 ── */
+function getDayCity(tripId, dayKey){
+  const trip=getTrip(tripId); if(!trip) return null;
+  if(trip.dayCity&&trip.dayCity[dayKey]) return trip.dayCity[dayKey];
+  // fallback: country 기본 도시
+  if(trip.country){const parts=trip.country.split('|');const code=parts[4]||'';const cities=COUNTRY_CITIES[code];if(cities&&cities.length)return cities[0];}
+  return null;
+}
+
+function updateDayCityBar(){
+  const trip=getTrip(currentId); if(!trip||!trip.country){document.getElementById('dayCityBar').style.display='none';return;}
+  const parts=trip.country.split('|');const code=parts[4]||'';
+  if(!code||!COUNTRY_CITIES[code]){document.getElementById('dayCityBar').style.display='none';return;}
+  const city=getDayCity(currentId,activeDayKey)||'—';
+  document.getElementById('dayCityBar').style.display='flex';
+  document.getElementById('dayCityName').textContent=city;
+  loadDayCityWeather(city);
+}
+
+async function loadDayCityWeather(city){
+  const wIcon=document.getElementById('dayCityWIcon');
+  const wTemp=document.getElementById('dayCityWTemp');
+  const wDesc=document.getElementById('dayCityWDesc');
+  wIcon.textContent='⏳';wTemp.textContent='';wDesc.textContent='';
+  const coord=CITY_COORDS[city];
+  if(!coord){wIcon.textContent='—';return;}
+  const wIcons={'0':'☀️','1':'🌤️','2':'⛅','3':'☁️','45':'🌫️','48':'🌫️','51':'🌦️','53':'🌦️','55':'🌧️','61':'🌧️','63':'🌧️','65':'🌧️','71':'❄️','73':'❄️','75':'❄️','80':'🌦️','81':'🌧️','82':'⛈️','95':'⛈️','96':'⛈️','99':'⛈️'};
+  const wDesc2={'0':'맑음','1':'대체로 맑음','2':'부분 흐림','3':'흐림','45':'안개','51':'이슬비','61':'비','71':'눈','80':'소나기','95':'뇌우'};
+  try{
+    const r=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${coord[0]}&longitude=${coord[1]}&current=temperature_2m,weathercode&timezone=auto`);
+    const d=await r.json();
+    const temp=Math.round(d.current.temperature_2m);
+    const wc=String(d.current.weathercode);
+    wIcon.textContent=wIcons[wc]||'🌡️';
+    wTemp.textContent=temp+'°C';
+    wDesc.textContent=wDesc2[wc]||wDesc2[String(Math.floor(Number(wc)/10)*10)]||'';
+  }catch(e){wIcon.textContent='—';}
+}
+
+let _citySheetTripId=null,_citySheetDayKey=null;
+function openCitySheet(){
+  if(window._readOnly)return;
+  const trip=getTrip(currentId);if(!trip||!trip.country)return;
+  const parts=trip.country.split('|');const code=parts[4]||'';
+  const cities=COUNTRY_CITIES[code];if(!cities||!cities.length)return;
+  _citySheetTripId=currentId;_citySheetDayKey=activeDayKey;
+  const currentCity=getDayCity(currentId,activeDayKey)||cities[0];
+  _citySheetSelected=currentCity;
+  document.getElementById('citySheetTitle').textContent=`Day ${Object.keys(trip.events).sort().indexOf(activeDayKey)+1} 도시 선택`;
+  document.getElementById('citySheetGrid').innerHTML=cities.map(c=>`<div onclick="selectCityInSheet('${c}')" id="csheet_${c}" style="display:flex;align-items:center;gap:6px;padding:8px 10px;border-radius:8px;border:${c===currentCity?'1.5px solid var(--terra)':'0.5px solid var(--sand3)'};background:${c===currentCity?'rgba(200,90,42,.07)':'var(--white)'};font-size:12px;color:${c===currentCity?'var(--terra)':'var(--ink)'};cursor:pointer;-webkit-tap-highlight-color:transparent;"><i class="ti ti-map-pin" style="font-size:12px;flex-shrink:0;"></i>${c}</div>`).join('');
+  document.getElementById('citySheetOverlay').style.display='block';
+  document.getElementById('citySheet').style.display='block';
+}
+function selectCityInSheet(city){
+  _citySheetSelected=city;
+  document.querySelectorAll('#citySheetGrid > div').forEach(el=>{
+    const sel=el.id===`csheet_${city}`;
+    el.style.border=sel?'1.5px solid var(--terra)':'0.5px solid var(--sand3)';
+    el.style.background=sel?'rgba(200,90,42,.07)':'var(--white)';
+    el.style.color=sel?'var(--terra)':'var(--ink)';
+  });
+}
+function confirmCitySheet(){
+  if(!_citySheetSelected||!_citySheetTripId||!_citySheetDayKey)return;
+  const trip=getTrip(_citySheetTripId);if(!trip)return;
+  if(!trip.dayCity)trip.dayCity={};
+  trip.dayCity[_citySheetDayKey]=_citySheetSelected;
+  persist();closeCitySheet();updateDayCityBar();
+}
+function closeCitySheet(){
+  document.getElementById('citySheetOverlay').style.display='none';
+  document.getElementById('citySheet').style.display='none';
 }
 
 /* ── 정보 추가 ── */
