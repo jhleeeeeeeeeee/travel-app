@@ -2712,10 +2712,10 @@ if('serviceWorker' in navigator){
 async function shareTrip(tripId){
   const trip=getTrip(tripId); if(!trip) return;
   if(!trip.shareId) trip.shareId='s'+Math.random().toString(36).slice(2,10);
-  // persist 대신 trips만 저장 (페이지 이동 없이)
   localStorage.setItem('tpv5_trips',JSON.stringify(trips));
 
   try{
+    // 해당 여행 데이터만 저장 (다른 여행 제외)
     await sbFetch('/rest/v1/shared_trips',{
       method:'POST',
       headers:{'Prefer':'resolution=merge-duplicates,return=minimal'},
@@ -2724,10 +2724,10 @@ async function shareTrip(tripId){
     const url=location.origin+location.pathname+'?share='+trip.shareId;
     if(navigator.clipboard){
       await navigator.clipboard.writeText(url);
-      showShareToast('링크가 복사됐습니다! 📋');
     } else {
       prompt('공유 링크:', url);
     }
+    showShareToast('링크가 복사됐습니다! 📋');
   } catch(e){
     console.error('[Share] 오류:', e);
     alert('공유 링크 생성 실패. 다시 시도해주세요.');
@@ -2756,9 +2756,9 @@ async function loadSharedTrip(shareId){
     }
     const trip=data[0].trip;
 
-    // 읽기전용: 기존 앱 UI 그대로 사용, 수정만 비활성화
+    // 읽기전용: 해당 여행만 플래너로 표시
     window._readOnly = true;
-    trips = [trip];
+    trips = [trip];  // 해당 여행만 (다른 여행 제외)
     currentId = trip.id;
     activeDayKey = trip.start;
 
@@ -2767,27 +2767,29 @@ async function loadSharedTrip(shareId){
       const el=document.getElementById(p);if(el)el.classList.add('hidden');
     });
 
-    // 읽기전용 배너 추가
+    // 읽기전용 배너
     const banner=document.createElement('div');
     banner.style.cssText='position:fixed;top:0;left:0;right:0;padding:6px;text-align:center;font-size:12px;font-family:DM Sans,sans-serif;font-weight:500;z-index:9999;background:#2A6B7C;color:#fff;';
-    banner.innerHTML='🔒 읽기 전용 · <span style="opacity:.8;">'+esc(trip.name||'여행')+'</span>';
+    banner.innerHTML='🔒 읽기 전용 &nbsp;·&nbsp; '+esc(trip.name||'여행')+'<span style="opacity:.6;font-size:11px;margin-left:8px;">'+((trip.start||'')+'~'+(trip.end||''))+'</span>';
     document.body.appendChild(banner);
 
-    // 플래너 페이지 열기 (읽기전용)
+    // 플래너 열기
     openTrip(trip.id);
 
-    // 저장 버튼 숨기기
+    // 수정 불가 UI 처리
     setTimeout(()=>{
-      const saveBtn=document.getElementById('btnSave');
-      if(saveBtn) saveBtn.style.display='none';
-      const addRowBtn=document.getElementById('btnAddRow');
-      if(addRowBtn) addRowBtn.style.display='none';
-      // 삭제 버튼들 숨기기
-      document.querySelectorAll('.row-del-btn,.tc-del').forEach(b=>b.style.display='none');
-      // 상단 여백
+      // 저장/추가/삭제/공유/뒤로가기 버튼 숨기기
+      ['saveBtn','btnAddRow'].forEach(id=>{
+        const el=document.getElementById(id);if(el)el.style.display='none';
+      });
+      document.querySelectorAll('.row-del-btn,.tc-del,.tc-act').forEach(b=>b.style.display='none');
+      // 뒤로가기 버튼 제거
+      const backBtn=document.getElementById('btnBackPlanner');
+      if(backBtn) backBtn.style.display='none';
+      // 상단 패딩 (배너 공간)
       const planner=document.getElementById('plannerPage');
-      if(planner) planner.style.paddingTop='32px';
-    },300);
+      if(planner) planner.style.paddingTop='30px';
+    },400);
   } catch(e){
     console.error('[Share] 로드 오류:', e);
   }
