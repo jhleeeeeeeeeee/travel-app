@@ -1140,65 +1140,113 @@ function saveInlineField(sel){
 }
 
 /* ── 모바일 일정표 ── */
+// 인라인 편집 필드 렌더링 (외부 함수)
+function mobFld(r, field, label, value, type, opts){
+  const ef=window._mobEditField;
+  const isEditing=window._mobExpandedId===r.id && ef && ef.id===r.id && ef.field===field;
+  if(isEditing){
+    if(opts){
+      return `<div>
+        <div style="font-size:11px;color:var(--ink3);margin-bottom:3px;letter-spacing:.04em;">${label}</div>
+        <select onchange="mobSaveField('${r.id}','${field}',this.value,'${activeDayKey}')"
+          style="width:100%;font-size:15px;padding:7px 8px;border:1.5px solid #C85A2A;border-radius:8px;background:var(--white);color:var(--ink);outline:none;-webkit-appearance:none;">
+          ${opts.map(o=>`<option value="${o.val}" ${(r[field]||'')===(o.val)?'selected':''}>${o.label}</option>`).join('')}
+        </select>
+      </div>`;
+    }
+    return `<div>
+      <div style="font-size:11px;color:var(--ink3);margin-bottom:3px;letter-spacing:.04em;">${label}</div>
+      <input type="${type||'text'}" value="${esc(String(r[field]||''))}"
+        inputmode="${type==='number'?'numeric':'text'}"
+        id="mobFldInp_${r.id}_${field}"
+        onblur="mobSaveField('${r.id}','${field}',this.value,'${activeDayKey}')"
+        onkeydown="if(event.key==='Enter')this.blur()"
+        style="width:100%;font-size:15px;padding:7px 8px;border:1.5px solid #C85A2A;border-radius:8px;background:var(--white);color:var(--ink);outline:none;box-sizing:border-box;">
+    </div>`;
+  }
+  return `<div onclick="mobStartEdit('${r.id}','${field}')" style="cursor:pointer;-webkit-tap-highlight-color:transparent;">
+    <div style="font-size:11px;color:var(--ink3);margin-bottom:3px;letter-spacing:.04em;">${label}</div>
+    <div style="font-size:13px;color:var(--ink);min-height:22px;padding:2px 0;border-bottom:1px dashed var(--sand3);">${value||'—'}</div>
+  </div>`;
+}
+
+function mobStartEdit(id,field){
+  window._mobEditField={id,field};
+  renderMobTable();
+  setTimeout(()=>{
+    const inp=document.getElementById('mobFldInp_'+id+'_'+field);
+    if(inp){inp.focus();inp.select();}
+    else{
+      const sel=document.querySelector(`[data-rowid="${id}"] select`);
+      if(sel) sel.focus();
+    }
+  },60);
+}
+
+function mobSaveField(id,field,value,dk){
+  const trip=getTrip(currentId);
+  const r=(trip.events[dk]||[]).find(r=>r.id===id);
+  if(!r) return;
+  if(field==='cost') r[field]=Number(String(value).replace(/,/g,'').replace(/[^0-9]/g,''))||0;
+  else r[field]=value;
+  window._mobEditField=null;
+  persist();
+  renderMobTable();
+  renderSummary();
+}
+
 function renderMobTable(){
   const trip=getTrip(currentId),evts=trip.events[activeDayKey]||[];
-  let total=0;
   const expandedId=window._mobExpandedId||null;
+  const catOpts=[
+    {val:'eat',label:'🍽 식사'},{val:'move',label:'🚗 이동'},{val:'see',label:'🔭 관광'},
+    {val:'rest',label:'🛏 숙박'},{val:'etc',label:'• 기타'}
+  ];
+  const transportOpts=[
+    {val:'—',label:'—'},{val:'도보',label:'도보'},{val:'버스',label:'버스'},
+    {val:'지하철',label:'지하철'},{val:'택시/우버',label:'택시/우버'},{val:'렌터카',label:'렌터카'},
+    {val:'기차',label:'기차'},{val:'비행기',label:'비행기'},{val:'배/선박',label:'배/선박'}
+  ];
 
   document.getElementById('tblBody').innerHTML=evts.map(r=>{
-    total+=Number(r.cost)||0;
     const cat=CATS[r.cat]||CATS.etc;
     const st=r.startTime||r.time||'',et=r.endTime||'';
     const timeDisp=st?(et?st+'–'+et:st):'시간 미설정';
     const isExpanded=expandedId===r.id;
-    const locLink=r.location?(isMapUrl(r.location)?
-      `<a href="${esc(r.location)}" target="_blank" style="color:#C85A2A;display:flex;align-items:center;gap:3px;font-size:13px;text-decoration:none;"><i class="ti ti-map-pin" style="font-size:12px;"></i>${esc(r.location.length>30?r.location.slice(0,30)+'…':r.location)}</a>`:
+    const bgR=r.cat==='eat'?'200,90,42':r.cat==='move'?'42,107,124':r.cat==='see'?'90,122,90':r.cat==='rest'?'200,168,75':'107,101,80';
+    const locHtml=r.location?(isMapUrl(r.location)?
+      `<a href="${esc(r.location)}" target="_blank" style="color:#C85A2A;font-size:13px;text-decoration:none;display:flex;align-items:center;gap:3px;"><i class="ti ti-map-pin" style="font-size:12px;"></i>지도 보기</a>`:
       `<span style="font-size:13px;">${esc(r.location)}</span>`):'—';
 
     return `<tr data-rowid="${r.id}">
       <td colspan="9" style="padding:0;border-bottom:8px solid var(--sand);">
         <div style="background:var(--white);border-radius:12px;overflow:hidden;border:${isExpanded?'1.5px solid #C85A2A':'0.5px solid var(--sand2)'};">
-          <div class="mob-card-header" data-cardid="${r.id}" style="display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;">
-            <div style="width:34px;height:34px;border-radius:9px;background:rgba(${r.cat==='eat'?'200,90,42':r.cat==='move'?'42,107,124':r.cat==='see'?'90,122,90':r.cat==='rest'?'200,168,75':'107,101,80'},.12);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">${cat.emoji}</div>
+          <!-- 카드 헤더 -->
+          <div class="mob-card-header" data-cardid="${r.id}" style="display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;-webkit-tap-highlight-color:transparent;">
+            <div style="width:34px;height:34px;border-radius:9px;background:rgba(${bgR},.12);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">${cat.emoji}</div>
             <div style="flex:1;min-width:0;">
               <div style="font-size:14px;font-weight:500;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(r.content)||'내용 없음'}</div>
               <div style="font-size:12px;color:var(--ink3);margin-top:1px;">${timeDisp}</div>
             </div>
             <i class="ti ti-chevron-${isExpanded?'up':'down'}" style="font-size:16px;color:${isExpanded?'#C85A2A':'var(--ink3)'};flex-shrink:0;"></i>
           </div>
+          <!-- 펼쳐진 세부내용 -->
           ${isExpanded?`
-          <div style="border-top:0.5px solid var(--sand2);padding:12px 14px;display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-            <div>
-              <div style="font-size:11px;color:var(--ink3);margin-bottom:3px;text-transform:uppercase;letter-spacing:.04em;">카테고리</div>
-              <div style="font-size:13px;color:var(--ink);">${cat.emoji} ${cat.label}</div>
-            </div>
-            <div>
-              <div style="font-size:11px;color:var(--ink3);margin-bottom:3px;text-transform:uppercase;letter-spacing:.04em;">비용</div>
-              <div style="font-size:13px;color:var(--ink);">${r.cost?'₩'+fmtCost(r.cost):'—'}</div>
-            </div>
-            <div>
-              <div style="font-size:11px;color:var(--ink3);margin-bottom:3px;text-transform:uppercase;letter-spacing:.04em;">이동수단</div>
-              <div style="font-size:13px;color:var(--ink);">${r.transport&&r.transport!=='—'?r.transport:'—'}</div>
-            </div>
-            <div>
-              <div style="font-size:11px;color:var(--ink3);margin-bottom:3px;text-transform:uppercase;letter-spacing:.04em;">소재지</div>
-              <div style="font-size:13px;color:var(--ink);">${r.region||'—'}</div>
-            </div>
+          <div style="border-top:0.5px solid var(--sand2);padding:14px;display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+            ${mobFld(r,'content','내용',esc(r.content))}
+            ${mobFld(r,'cost','비용(₩)',r.cost?fmtCost(r.cost):'')}
+            ${mobFld(r,'cat','카테고리',cat.emoji+' '+cat.label,'text',catOpts)}
+            ${mobFld(r,'transport','이동수단',r.transport&&r.transport!=='—'?r.transport:'','text',transportOpts)}
+            ${mobFld(r,'region','소재지',r.region||'')}
+            ${mobFld(r,'note','비고',r.note||'')}
             <div style="grid-column:1/-1;">
-              <div style="font-size:11px;color:var(--ink3);margin-bottom:3px;text-transform:uppercase;letter-spacing:.04em;">위치</div>
-              <div>${locLink}</div>
-            </div>
-            <div style="grid-column:1/-1;">
-              <div style="font-size:11px;color:var(--ink3);margin-bottom:3px;text-transform:uppercase;letter-spacing:.04em;">비고</div>
-              <div style="font-size:13px;color:var(--ink);">${r.note||'—'}</div>
+              <div style="font-size:11px;color:var(--ink3);margin-bottom:3px;letter-spacing:.04em;">위치</div>
+              ${locHtml}
             </div>
           </div>
           <div style="padding:8px 14px;border-top:0.5px solid var(--sand2);display:flex;justify-content:space-between;align-items:center;background:var(--sand);">
             <button class="mob-card-time" data-tc="${r.id}" data-dk="${activeDayKey}" style="font-family:'DM Sans',sans-serif;font-size:12px;color:var(--terra);background:rgba(200,90,42,.08);border:1px solid rgba(200,90,42,.2);border-radius:7px;padding:5px 10px;cursor:pointer;display:flex;align-items:center;gap:4px;"><i class="ti ti-clock" style="font-size:12px;"></i>${timeDisp}</button>
-            <div style="display:flex;gap:6px;">
-              <button class="mob-card-edit" data-eid="${r.id}" data-dk="${activeDayKey}" style="font-family:'DM Sans',sans-serif;font-size:12px;background:var(--white);border:0.5px solid var(--sand3);border-radius:7px;padding:5px 12px;cursor:pointer;color:var(--ink3);">수정</button>
-              <button class="row-del-btn" data-rdel="${r.id}" data-dk="${activeDayKey}" style="font-family:'DM Sans',sans-serif;font-size:12px;background:#FAECE7;border:0.5px solid #F0997B;border-radius:7px;padding:5px 12px;cursor:pointer;color:#993C1D;">삭제</button>
-            </div>
+            <button class="row-del-btn" data-rdel="${r.id}" data-dk="${activeDayKey}" style="font-family:'DM Sans',sans-serif;font-size:12px;background:#FAECE7;border:0.5px solid #F0997B;border-radius:7px;padding:5px 12px;cursor:pointer;color:#993C1D;">삭제</button>
           </div>
           `:''}
         </div>
@@ -1207,7 +1255,6 @@ function renderMobTable(){
   }).join('');
   document.getElementById('tblFoot').innerHTML='';
 }
-
 
 /* ── 타임라인 인라인 체크리스트 ── */
 function renderMobTimelineChecklist(){
@@ -1241,12 +1288,12 @@ function renderMobTimelineChecklist(){
     </div>
     <div id="tlClItems" style="padding:6px 14px;">
       ${items.length?items.map(item=>`
-        <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:0.5px solid var(--sand2);">
-          <div onclick="tlToggleItem('${item.id}')" style="width:20px;height:20px;border-radius:6px;${item.done?'background:#5A7A5A;':'border:1.5px solid var(--sand3);background:var(--white);'}display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;">
-            ${item.done?'<i class="ti ti-check" style="font-size:12px;color:#fff;"></i>':''}
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:0.5px solid var(--sand2);">
+          <div onclick="tlToggleItem('${item.id}')" style="width:24px;height:24px;border-radius:7px;${item.done?'background:#5A7A5A;border:none;':'border:1.5px solid var(--sand3);background:var(--white);'}display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;-webkit-tap-highlight-color:transparent;">
+            ${item.done?'<i class="ti ti-check" style="font-size:13px;color:#fff;pointer-events:none;"></i>':''}
           </div>
-          <span style="flex:1;font-size:13px;color:var(--ink);${item.done?'text-decoration:line-through;color:var(--ink3);':''}">${esc(item.text)}</span>
-          <button onclick="tlDelItem('${item.id}')" style="background:none;border:none;cursor:pointer;color:var(--sand3);font-size:14px;padding:2px;"><i class="ti ti-x"></i></button>
+          <span style="flex:1;font-size:14px;color:var(--ink);${item.done?'text-decoration:line-through;color:var(--ink3);':''}">${esc(item.text)}</span>
+          <div onclick="tlDelItem('${item.id}')" style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink3);-webkit-tap-highlight-color:transparent;flex-shrink:0;"><i class="ti ti-x" style="font-size:14px;pointer-events:none;"></i></div>
         </div>`).join('')
       :`<div style="padding:8px 0;">
         <div style="font-size:11px;color:var(--ink3);margin-bottom:6px;">추천 항목</div>
@@ -1269,23 +1316,72 @@ function renderMobTimelineChecklist(){
 function tlAddItem(){
   const inp=document.getElementById('tlClInp'); if(!inp) return;
   const text=inp.value.trim(); if(!text) return;
-  addClItem(text,window._tlChecklistEvtId,false);
+  const eid=window._tlChecklistEvtId;
+  const trip=getTrip(currentId),cl=getChecklist();
+  const key=eid==='all'?'all_'+activeDayKey:eid;
+  if(!cl[key])cl[key]=[];
+  cl[key].push({id:'ci'+Date.now(),text,done:false});
+  trip.checklist=cl;persistCl();
   inp.value='';
   renderMobTimelineChecklist();
 }
-function tlToggleItem(id){ toggleClItem(id,false); renderMobTimelineChecklist(); }
-function tlDelItem(id){ delClItem(id,false); renderMobTimelineChecklist(); }
-function tlAddSugg(text){ addClItem(text,window._tlChecklistEvtId,false); renderMobTimelineChecklist(); }
+
+function tlToggleItem(id){
+  const eid=window._tlChecklistEvtId;
+  const trip=getTrip(currentId),cl=getChecklist();
+  const key=eid==='all'?'all_'+activeDayKey:eid;
+  const item=(cl[key]||[]).find(i=>i.id===id);
+  if(item){item.done=!item.done;trip.checklist=cl;persistCl();}
+  renderMobTimelineChecklist();
+}
+
+function tlDelItem(id){
+  const eid=window._tlChecklistEvtId;
+  const trip=getTrip(currentId),cl=getChecklist();
+  const key=eid==='all'?'all_'+activeDayKey:eid;
+  cl[key]=(cl[key]||[]).filter(i=>i.id!==id);
+  trip.checklist=cl;persistCl();
+  renderMobTimelineChecklist();
+}
+
+function tlAddSugg(text){ 
+  const eid=window._tlChecklistEvtId;
+  const trip=getTrip(currentId),cl=getChecklist();
+  const key=eid==='all'?'all_'+activeDayKey:eid;
+  if(!cl[key])cl[key]=[];
+  cl[key].push({id:'ci'+Date.now(),text,done:false});
+  trip.checklist=cl;persistCl();
+  renderMobTimelineChecklist();
+}
 function renderMobTimeline(){
   const trip=getTrip(currentId),evts=trip.events[activeDayKey]||[],total=TIMES.length;
   let grid='';
   TIMES.forEach(t=>{const isH=t.endsWith(':00');grid+=`<div class="tl-row ${isH?'hr':'hf'}"><div class="tl-lbl ${isH?'':'dim'}">${isH?t:''}</div><div class="tl-cell" data-tltime="${t}" data-tldk="${activeDayKey}"></div></div>`;});
   let blks='';
   evts.forEach(ev=>{
+    const cat=CATS[ev.cat]||CATS.etc;
     const st=ev.startTime||ev.time||'00:00',et=ev.endTime||'';
     const si=t2i(st),ei=et?t2i(et):si+1,dur=Math.max(ei-si,1),top=si*ROW_H,h=dur*ROW_H;
-    blks+=`<div class="evb evb-${ev.cat}${clEvtId===ev.id?' evb-selected':''}" style="top:${top+1}px;height:${h-2}px" data-mobtlid="${ev.id}" data-mobtldk="${activeDayKey}">
-      <div class="evb-body"><div class="evb-title">${esc(ev.content||'')}</div>${h>28?`<div class="evb-sub">${st}${et?'–'+et:''}</div>`:''}</div></div>`;
+    const isSelected=window._tlChecklistEvtId===ev.id;
+
+    // 높이에 따라 표시할 정보 결정
+    const showTime=h>24;
+    const showCat=h>48;
+    const showDetails=h>80;
+    const showCost=h>100 && ev.cost;
+    const showTransport=h>120 && ev.transport && ev.transport!=='—';
+    const showRegion=h>140 && ev.region;
+    const showNote=h>160 && ev.note;
+
+    let body=`<div class="evb-title" style="font-size:${h<40?'10px':'11px'};font-weight:500;margin-bottom:${h<40?'0':'2px'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${cat.emoji} ${esc(ev.content||'')}</div>`;
+    if(showTime) body+=`<div style="font-size:10px;opacity:.75;margin-bottom:2px;">${st}${et?'–'+et:''}</div>`;
+    if(showCat) body+=`<div style="font-size:10px;opacity:.8;margin-bottom:1px;">${cat.emoji} ${cat.label}</div>`;
+    if(showCost) body+=`<div style="font-size:10px;opacity:.8;margin-bottom:1px;">₩${fmtCost(ev.cost)}</div>`;
+    if(showTransport) body+=`<div style="font-size:10px;opacity:.8;margin-bottom:1px;">🚌 ${esc(ev.transport)}</div>`;
+    if(showRegion) body+=`<div style="font-size:10px;opacity:.8;margin-bottom:1px;">📍 ${esc(ev.region)}</div>`;
+    if(showNote) body+=`<div style="font-size:10px;opacity:.7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">📝 ${esc(ev.note)}</div>`;
+
+    blks+=`<div class="evb evb-${ev.cat}" style="top:${top+1}px;height:${h-2}px;padding:${h<32?'3px 6px':'6px 8px'};${isSelected?'outline:2px solid #C85A2A;outline-offset:-2px;':''}" data-mobtlid="${ev.id}" data-mobtldk="${activeDayKey}">${body}</div>`;
   });
   const wrap=document.getElementById('tlWrapMob');
   document.getElementById('tlGridMob').innerHTML=grid;
