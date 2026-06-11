@@ -136,22 +136,19 @@ table.sp tr:active td{background:var(--sand);}
 .tl-cell{flex:1;border-left:1px solid var(--sand2);cursor:pointer;touch-action:pan-y;}
 .tl-cell:active{background:rgba(200,90,42,.06);}
 .tl-evts{position:absolute;top:0;left:44px;right:4px;pointer-events:none;touch-action:pan-y;}
-.evb{position:absolute;left:0;right:0;border-radius:7px;overflow:hidden;display:flex;flex-direction:column;cursor:pointer;pointer-events:all;box-shadow:0 2px 8px rgba(28,26,20,.13);transition:filter .12s;touch-action:pan-y;}
+.evb{position:absolute;left:0;right:0;border-radius:8px;overflow:hidden;display:flex;flex-direction:column;cursor:pointer;pointer-events:all;transition:filter .12s;touch-action:pan-y;}
 .evb:active{filter:brightness(.93);}
-.evb::before{content:'';display:block;height:3px;flex-shrink:0;}
-.evb-eat::before{background:#C85A2A;}.evb-move::before{background:#2A6B7C;}
-.evb-see::before{background:#5A7A5A;}.evb-rest::before{background:#C8A84B;}.evb-etc::before{background:#6B6550;}
 .evb-body{padding:5px 7px;flex:1;position:relative;}
-.evb-eat{background:linear-gradient(180deg,#FBF0EA,#F5E4D0);border:1px solid rgba(200,90,42,.2);}
-.evb-move{background:linear-gradient(180deg,#E4F2F7,#CCE6F2);border:1px solid rgba(42,107,124,.2);}
-.evb-see{background:linear-gradient(180deg,#E8F2E8,#D2E8D2);border:1px solid rgba(90,122,90,.2);}
-.evb-rest{background:linear-gradient(180deg,#F4EFE2,#EAE0C8);border:1px solid rgba(200,168,75,.2);}
-.evb-etc{background:linear-gradient(180deg,#EEEAE0,#E4DFCF);border:1px solid rgba(107,101,80,.2);}
+.evb-eat{background:#FDF0EA;border:1px solid #F0C4AC;}
+.evb-move{background:#E4F2F7;border:1px solid #AAD4E4;}
+.evb-see{background:#EEF4EE;border:1px solid #B8D4B8;}
+.evb-rest{background:#FBF4E0;border:1px solid #E8D898;}
+.evb-etc{background:#F2EFE8;border:1px solid #D8D4C4;}
 .evb-title{font-size:10px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3;}
-.evb-eat .evb-title{color:#6A2010;}.evb-move .evb-title{color:#133E48;}
+.evb-eat .evb-title{color:#7A2C12;}.evb-move .evb-title{color:#133E48;}
 .evb-see .evb-title{color:#1E3E1E;}.evb-rest .evb-title{color:#5A4010;}.evb-etc .evb-title{color:#3A3525;}
 .evb-sub{font-size:9px;opacity:.72;white-space:nowrap;overflow:hidden;}
-.evb-eat .evb-sub{color:#904030;}.evb-move .evb-sub{color:#1A5060;}
+.evb-eat .evb-sub{color:#993C1D;}.evb-move .evb-sub{color:#1A5060;}
 .evb-see .evb-sub{color:#2A4A2A;}.evb-rest .evb-sub{color:#7A5818;}.evb-etc .evb-sub{color:#4A4535;}
 .evb-selected{outline:2.5px solid var(--terra)!important;outline-offset:1px;}
 
@@ -1655,7 +1652,10 @@ function renderMobTimeline(){
     const pad=h<32?'3px 6px':'7px 10px';
 
     // 제목
-    let body=`<div style="font-size:${h<36?'10px':'12px'};font-weight:500;color:#133E48;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:${h>50?'6px':'0'};">${cat.emoji} ${esc(ev.content||'')}</div>`;
+    const titleColor={'eat':'#7A2C12','move':'#133E48','see':'#1E3E1E','rest':'#5A4010','etc':'#3A3525'}[ev.cat]||'#3A3525';
+    const tagBg='rgba(255,255,255,.65)';
+    const tagColor={'eat':'#993C1D','move':'#1A5060','see':'#2A4A2A','rest':'#7A5818','etc':'#4A4535'}[ev.cat]||'#4A4535';
+    let body=`<div style="font-size:${h<36?'10px':'12px'};font-weight:500;color:${titleColor};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:${h>50?'6px':'0'};">${cat.emoji} ${esc(ev.content||'')}</div>`;
 
     if(h>120){
       // 넓은 공간: 2열 그리드 카드
@@ -1671,9 +1671,9 @@ function renderMobTimeline(){
         body+=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;">`;
         cells.forEach(([lbl,val],ci)=>{
           const full=(lbl.includes('비고')||lbl.includes('위치'));
-          body+=`<div style="${full?'grid-column:1/-1;':''}background:rgba(255,255,255,.55);border-radius:6px;padding:4px 7px;">
-            <div style="font-size:9px;color:#4A7A8A;margin-bottom:1px;">${lbl}</div>
-            <div style="font-size:11px;font-weight:500;color:#133E48;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${val}</div>
+          body+=`<div style="${full?'grid-column:1/-1;':''}background:${tagBg};border-radius:6px;padding:4px 7px;">
+            <div style="font-size:9px;color:${tagColor};margin-bottom:1px;opacity:.75;">${lbl}</div>
+            <div style="font-size:11px;font-weight:500;color:${titleColor};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${val}</div>
           </div>`;
         });
         body+=`</div>`;
@@ -1688,11 +1688,11 @@ function renderMobTimeline(){
       if(ev.note) tags.push(`📝 ${esc(ev.note)}`);
       if(ev.location&&!isMapUrl(ev.location)) tags.push(`🗺 ${esc(ev.location.length>12?ev.location.slice(0,12)+'…':ev.location)}`);
       body+=`<div style="display:flex;flex-wrap:wrap;gap:3px;">`;
-      tags.forEach(t=>{ body+=`<span style="background:rgba(255,255,255,.6);border-radius:5px;padding:2px 6px;font-size:10px;color:#2A5060;">${t}</span>`; });
+      tags.forEach(t=>{ body+=`<span style="background:${tagBg};border-radius:5px;padding:2px 6px;font-size:10px;color:${tagColor};">${t}</span>`; });
       body+=`</div>`;
     } else if(h>30){
       // 좁은 공간: 시간만
-      body+=`<div style="font-size:10px;color:#2A5060;opacity:.85;">${st}${et?'–'+et:''}</div>`;
+      body+=`<div style="font-size:10px;color:${tagColor};opacity:.85;">${st}${et?'–'+et:''}</div>`;
     }
 
     blks+=`<div class="evb evb-${ev.cat}" style="top:${top+1}px;height:${h-2}px;padding:${pad};overflow:hidden;${isSelected?'outline:2px solid #C85A2A;outline-offset:-2px;':''}" data-mobtlid="${ev.id}" data-mobtldk="${activeDayKey}">${body}</div>`;
