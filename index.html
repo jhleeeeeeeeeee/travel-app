@@ -593,38 +593,50 @@ table.sp td{overflow:hidden;}
   </div>
   <div class="pl-sub">
     <div class="day-tabs-bar" id="dayTabsBar"></div>
-    <div id="dayCityBar" style="display:none;align-items:center;gap:8px;padding:6px 12px;background:var(--sand);border-bottom:0.5px solid var(--sand2);">
-      <i class="ti ti-map-pin" style="font-size:13px;color:var(--terra);flex-shrink:0;"></i>
-      <div id="dayCityChip" onclick="openCitySheet()" style="display:flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;border:1px solid var(--terra);background:var(--white);font-size:12px;color:var(--terra);font-weight:500;cursor:pointer;-webkit-tap-highlight-color:transparent;">
-        <span id="dayCityName">—</span>
-        <i class="ti ti-chevron-down" style="font-size:11px;"></i>
+    <!-- 통합 정보 바 -->
+    <div id="tripInfoBar" style="display:none;">
+      <!-- 1행: 도시 + 날씨 + 환율 -->
+      <div style="display:flex;align-items:center;background:var(--white);border-bottom:0.5px solid var(--sand2);">
+        <div style="display:flex;align-items:center;gap:5px;padding:7px 10px;flex-shrink:0;">
+          <i class="ti ti-map-pin" style="font-size:12px;color:var(--terra);"></i>
+          <div id="dayCityChip" onclick="openCitySheet()" style="display:flex;align-items:center;gap:3px;padding:3px 9px;border-radius:20px;border:1px solid var(--terra);background:#FDF0EA;font-size:12px;color:var(--terra);font-weight:500;cursor:pointer;-webkit-tap-highlight-color:transparent;">
+            <span id="dayCityName">—</span>
+            <i class="ti ti-chevron-down" style="font-size:10px;"></i>
+          </div>
+        </div>
+        <div style="width:0.5px;height:26px;background:var(--sand2);flex-shrink:0;"></div>
+        <div style="display:flex;align-items:center;gap:5px;padding:7px 10px;flex-shrink:0;">
+          <span id="dayCityWIcon" style="font-size:17px;">⏳</span>
+          <span id="dayCityWTemp" style="font-size:13px;font-weight:500;color:var(--ink);"></span>
+          <span id="dayCityWDesc" style="font-size:11px;color:var(--ink3);"></span>
+        </div>
+        <div style="width:0.5px;height:26px;background:var(--sand2);flex-shrink:0;"></div>
+        <div style="flex:1;padding:7px 10px;display:flex;align-items:center;gap:5px;">
+          <span style="font-size:13px;color:#C8A84B;flex-shrink:0;">₩</span>
+          <span id="tibRateMain" style="font-size:12px;font-weight:500;color:var(--ink);white-space:nowrap;">—</span>
+        </div>
       </div>
-      <div id="dayCityWeather" style="display:flex;align-items:center;gap:5px;margin-left:auto;font-size:12px;color:var(--ink);">
-        <span id="dayCityWIcon" style="font-size:16px;">—</span>
-        <span id="dayCityWTemp" style="font-weight:500;"></span>
-        <span id="dayCityWDesc" style="font-size:11px;color:var(--ink3);"></span>
+      <!-- 2행: 오늘일정 / 오늘비용 / 전체일정비용 / 여행정보 -->
+      <div style="display:grid;grid-template-columns:0.7fr 1.3fr 1.3fr auto;align-items:stretch;background:var(--sand);border-bottom:0.5px solid var(--sand2);">
+        <div style="padding:7px 8px;display:flex;flex-direction:column;align-items:center;justify-content:center;border-right:0.5px solid var(--sand2);">
+          <span style="font-size:10px;color:var(--ink3);white-space:nowrap;">오늘 일정</span>
+          <span id="tibTodayCount" style="font-size:14px;font-weight:500;color:var(--ink);">—</span>
+        </div>
+        <div style="padding:7px 8px;display:flex;flex-direction:column;align-items:center;justify-content:center;border-right:0.5px solid var(--sand2);">
+          <span style="font-size:10px;color:var(--ink3);white-space:nowrap;">오늘 비용</span>
+          <span id="tibDayCost" style="font-size:11px;font-weight:500;color:var(--terra);white-space:nowrap;">—</span>
+        </div>
+        <div style="padding:7px 8px;display:flex;flex-direction:column;align-items:center;justify-content:center;border-right:0.5px solid var(--sand2);">
+          <span style="font-size:10px;color:var(--ink3);white-space:nowrap;">전체 일정 비용</span>
+          <span id="tibTotalCost" style="font-size:11px;font-weight:500;color:var(--ink);white-space:nowrap;">—</span>
+        </div>
+        <div onclick="goTripCountryInfo()" style="padding:7px 12px;display:flex;align-items:center;gap:4px;cursor:pointer;color:var(--terra);-webkit-tap-highlight-color:transparent;flex-shrink:0;">
+          <i class="ti ti-info-circle" style="font-size:15px;"></i>
+          <span style="font-size:11px;font-weight:500;white-space:nowrap;">여행 정보</span>
+        </div>
       </div>
     </div>
-    <!-- 날씨/환율/여행정보 바 -->
-    <div id="tripInfoBar" style="display:none;border-bottom:0.5px solid var(--sand2);">
-      <div style="display:flex;align-items:stretch;">
-        <div id="tibWeather" style="flex:1;padding:7px 10px;display:flex;align-items:center;gap:6px;border-right:0.5px solid var(--sand2);cursor:default;">
-          <span id="tibWeatherIcon" style="font-size:20px;">⏳</span>
-          <div><div id="tibWeatherTemp" style="font-size:13px;font-weight:500;color:var(--ink);">—</div>
-          <div id="tibWeatherCity" style="font-size:10px;color:var(--ink3);">로딩중</div></div>
-        </div>
-        <div id="tibRate" style="flex:1;padding:7px 10px;display:flex;align-items:center;gap:6px;border-right:0.5px solid var(--sand2);cursor:default;">
-          <span style="font-size:15px;color:#C8A84B;">₩</span>
-          <div><div id="tibRateMain" style="font-size:12px;font-weight:500;color:var(--ink);">—</div>
-          <div id="tibRateSub" style="font-size:10px;color:var(--ink3);">실시간 환율</div></div>
-        </div>
-        <div onclick="goTripCountryInfo()" style="padding:7px 12px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;color:#C85A2A;-webkit-tap-highlight-color:transparent;gap:2px;">
-          <i class="ti ti-info-circle" style="font-size:18px;"></i>
-          <div style="font-size:10px;font-weight:500;line-height:1.2;text-align:center;">여행<br>정보</div>
-        </div>
-      </div>
-    </div>
-    <div class="summary-bar" id="summaryBar"></div>
+    <div id="summaryBar" style="display:none;"></div>
   </div>
 
   <!-- 모바일: 탭별 패널 -->
@@ -1209,10 +1221,12 @@ function renderSummary(){
   const trip=getTrip(currentId),evts=trip.events[activeDayKey]||[];
   const dayTotal=evts.reduce((s,r)=>s+(Number(r.cost)||0),0);
   const grand=allEvts(trip).reduce((s,r)=>s+(Number(r.cost)||0),0);
-  document.getElementById('summaryBar').innerHTML=`
-    <div class="sum-card"><span class="sum-label">오늘</span><span class="sum-val">${evts.length}개</span></div>
-    <div class="sum-card"><span class="sum-label">당일</span><span class="sum-val green">₩${fmtCost(dayTotal)}</span></div>
-    <div class="sum-card"><span class="sum-label">총합</span><span class="sum-val">₩${fmtCost(grand)}</span></div>`;
+  const tc=document.getElementById('tibTodayCount');
+  const dc=document.getElementById('tibDayCost');
+  const gc=document.getElementById('tibTotalCost');
+  if(tc) tc.textContent=evts.length+'개';
+  if(dc) dc.textContent='₩'+fmtCost(dayTotal);
+  if(gc) gc.textContent='₩'+fmtCost(grand);
 }
 
 /* ── 도시 여정 바 ── */
@@ -1499,40 +1513,16 @@ function renderMobTable(){
 
 /* ── 플래너 상단 날씨/환율/여행정보 바 ── */
 async function loadTripInfoBar(){
-  const trip=getTrip(currentId); if(!trip||!trip.country) {
+  const trip=getTrip(currentId); if(!trip||!trip.country){
     document.getElementById('tripInfoBar').style.display='none'; return;
   }
   const parts=trip.country.split('|');
   if(parts.length<5){document.getElementById('tripInfoBar').style.display='none';return;}
   const [flag,name,currency,city,code]=parts;
   document.getElementById('tripInfoBar').style.display='block';
-  document.getElementById('tibWeatherCity').textContent=flag+' '+name;
-  document.getElementById('tibRateSub').textContent=currency+' 환율';
 
-  // 날씨
-  try{
-    const wcoords={
-      KR:[37.56,126.97],
-      JP:[35.68,139.69],CN:[39.9,116.4],TW:[25.04,121.51],VN:[21.03,105.83],
-      TH:[13.75,100.52],SG:[1.35,103.82],ID:[-6.21,106.85],PH:[14.6,121.0],
-      MY:[3.15,101.7],HK:[22.3,114.17],AE:[25.2,55.27],TR:[41.01,28.95],
-      GB:[51.51,-0.13],FR:[48.85,2.35],DE:[52.52,13.4],IT:[41.9,12.48],
-      ES:[40.42,-3.7],PT:[38.72,-9.14],CH:[46.95,7.45],GR:[37.98,23.73],
-      US:[40.71,-74.01],CA:[43.65,-79.38],AU:[-33.87,151.21],NZ:[-36.86,174.77],
-      MV:[4.17,73.51],MA:[33.59,-7.62]
-    };
-    const coord=wcoords[code]||[35.68,139.69];
-    const wr=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${coord[0]}&longitude=${coord[1]}&current_weather=true`);
-    if(wr.ok){
-      const wd=await wr.json();
-      const temp=Math.round(wd.current_weather?.temperature||0);
-      const wc=wd.current_weather?.weathercode||0;
-      const wIcons={0:'☀️',1:'🌤',2:'⛅',3:'☁️',45:'🌫',48:'🌫',51:'🌦',61:'🌧',71:'❄️',80:'🌦',95:'⛈'};
-      const icon=wIcons[Math.floor(wc/10)*10]||wIcons[wc]||'🌡';
-      document.getElementById('tibWeatherIcon').textContent=icon;
-      document.getElementById('tibWeatherTemp').textContent=temp+'°C';
-    }
-  }catch(e){document.getElementById('tibWeatherTemp').textContent='—';}
+  // 도시 칩 & 날씨는 updateDayCityBar가 처리
+  updateDayCityBar();
 
   // 환율
   try{
@@ -2352,11 +2342,10 @@ function getDayCity(tripId, dayKey){
 }
 
 function updateDayCityBar(){
-  const trip=getTrip(currentId); if(!trip||!trip.country){document.getElementById('dayCityBar').style.display='none';return;}
+  const trip=getTrip(currentId); if(!trip||!trip.country){return;}
   const parts=trip.country.split('|');const code=parts[4]||'';
-  if(!code||!COUNTRY_CITIES[code]){document.getElementById('dayCityBar').style.display='none';return;}
+  if(!code||!COUNTRY_CITIES[code]){return;}
   const city=getDayCity(currentId,activeDayKey)||'—';
-  document.getElementById('dayCityBar').style.display='flex';
   document.getElementById('dayCityName').textContent=city;
   loadDayCityWeather(city);
 }
