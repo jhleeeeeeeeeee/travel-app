@@ -1102,7 +1102,7 @@ function openTrip(id){
       if(t) t.style.tableLayout='fixed';
     });
   });
-  loadTripInfoBar();
+  setTimeout(()=>loadTripInfoBar(), 300);
   renderAll();
 }
 
