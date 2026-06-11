@@ -911,9 +911,16 @@ const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZ
 const SB_USER_ID='default_user'; // 단일 사용자 앱
 
 async function sbFetch(path,options={}){
+  const {headers:optHeaders,...restOptions}=options;
   const res=await fetch(SB_URL+path,{
-    headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json','Prefer':'return=representation',...(options.headers||{})},
-    ...options
+    ...restOptions,
+    headers:{
+      'apikey':SB_KEY,
+      'Authorization':'Bearer '+SB_KEY,
+      'Content-Type':'application/json',
+      'Prefer':'return=representation',
+      ...(optHeaders||{})
+    }
   });
   if(!res.ok){const e=await res.text();console.warn('SB error:',e);return null;}
   const text=await res.text();
