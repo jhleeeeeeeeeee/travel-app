@@ -1240,8 +1240,8 @@ function renderMobTable(){
             ${mobFld(r,'region','소재지',r.region||'')}
             ${mobFld(r,'note','비고',r.note||'')}
             <div style="grid-column:1/-1;">
-              <div style="font-size:11px;color:var(--ink3);margin-bottom:3px;letter-spacing:.04em;">위치</div>
-              ${locHtml}
+              ${mobFld(r,'location','위치',r.location&&!isMapUrl(r.location)?r.location:r.location&&isMapUrl(r.location)?'지도 링크':'',)}
+              ${r.location&&isMapUrl(r.location)?`<div style="margin-top:4px;">${locHtml}</div>`:''}
             </div>
           </div>
           <div style="padding:8px 14px;border-top:0.5px solid var(--sand2);display:flex;justify-content:space-between;align-items:center;background:var(--sand);">
@@ -1364,24 +1364,26 @@ function renderMobTimeline(){
     const si=t2i(st),ei=et?t2i(et):si+1,dur=Math.max(ei-si,1),top=si*ROW_H,h=dur*ROW_H;
     const isSelected=window._tlChecklistEvtId===ev.id;
 
-    // 높이에 따라 표시할 정보 결정
-    const showTime=h>24;
-    const showCat=h>48;
-    const showDetails=h>80;
-    const showCost=h>100 && ev.cost;
-    const showTransport=h>120 && ev.transport && ev.transport!=='—';
-    const showRegion=h>140 && ev.region;
-    const showNote=h>160 && ev.note;
+    // 표시할 정보를 높이 기반으로 순차 추가
+    const pad=h<32?'3px 6px':'6px 8px';
+    let body=`<div style="font-size:${h<36?'10px':'11px'};font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:1px;">${cat.emoji} ${esc(ev.content||'')}</div>`;
 
-    let body=`<div class="evb-title" style="font-size:${h<40?'10px':'11px'};font-weight:500;margin-bottom:${h<40?'0':'2px'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${cat.emoji} ${esc(ev.content||'')}</div>`;
-    if(showTime) body+=`<div style="font-size:10px;opacity:.75;margin-bottom:2px;">${st}${et?'–'+et:''}</div>`;
-    if(showCat) body+=`<div style="font-size:10px;opacity:.8;margin-bottom:1px;">${cat.emoji} ${cat.label}</div>`;
-    if(showCost) body+=`<div style="font-size:10px;opacity:.8;margin-bottom:1px;">₩${fmtCost(ev.cost)}</div>`;
-    if(showTransport) body+=`<div style="font-size:10px;opacity:.8;margin-bottom:1px;">🚌 ${esc(ev.transport)}</div>`;
-    if(showRegion) body+=`<div style="font-size:10px;opacity:.8;margin-bottom:1px;">📍 ${esc(ev.region)}</div>`;
-    if(showNote) body+=`<div style="font-size:10px;opacity:.7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">📝 ${esc(ev.note)}</div>`;
+    // 각 항목을 태그 형태로 쌓기
+    const tags=[];
+    if(h>36) tags.push(`<span style="opacity:.8">${st}${et?'–'+et:''}</span>`);
+    if(h>60 && ev.cost) tags.push(`<span>₩${fmtCost(ev.cost)}</span>`);
+    if(h>80 && ev.transport && ev.transport!=='—') tags.push(`<span>${ev.transport}</span>`);
+    if(h>100 && ev.region) tags.push(`<span>📍${esc(ev.region)}</span>`);
+    if(h>120 && ev.note) tags.push(`<span style="opacity:.75">📝${esc(ev.note)}</span>`);
+    if(h>140 && ev.location && !isMapUrl(ev.location)) tags.push(`<span style="opacity:.75">🗺 ${esc(ev.location.length>15?ev.location.slice(0,15)+'…':ev.location)}</span>`);
 
-    blks+=`<div class="evb evb-${ev.cat}" style="top:${top+1}px;height:${h-2}px;padding:${h<32?'3px 6px':'6px 8px'};${isSelected?'outline:2px solid #C85A2A;outline-offset:-2px;':''}" data-mobtlid="${ev.id}" data-mobtldk="${activeDayKey}">${body}</div>`;
+    if(tags.length){
+      body+=`<div style="display:flex;flex-direction:column;gap:1px;margin-top:2px;">`;
+      tags.forEach(t=>{ body+=`<div style="font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${t}</div>`; });
+      body+=`</div>`;
+    }
+
+    blks+=`<div class="evb evb-${ev.cat}" style="top:${top+1}px;height:${h-2}px;padding:${pad};overflow:hidden;${isSelected?'outline:2px solid #C85A2A;outline-offset:-2px;':''}" data-mobtlid="${ev.id}" data-mobtldk="${activeDayKey}">${body}</div>`;
   });
   const wrap=document.getElementById('tlWrapMob');
   document.getElementById('tlGridMob').innerHTML=grid;
