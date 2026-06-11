@@ -125,8 +125,8 @@ table.sp tr:active td{background:var(--sand);}
 .add-row-btn{display:flex;align-items:center;gap:6px;padding:10px 8px;color:var(--ink3);cursor:pointer;font-size:12px;border-top:1px solid var(--sand2);background:var(--white);}
 
 /* 타임라인 패널 */
-.tl-wrap-outer{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;}
-.tl-wrap{position:relative;}
+.tl-wrap-outer{flex:1;overflow-y:scroll;-webkit-overflow-scrolling:touch;touch-action:pan-y;overscroll-behavior:contain;}
+.tl-wrap{position:relative;min-height:100%;}
 .tl-grid{display:flex;flex-direction:column;}
 .tl-row{display:flex;height:32px;}
 .tl-row.hr{border-top:1px solid var(--sand3);}
@@ -379,17 +379,17 @@ table.sp tr:active td{background:var(--sand);}
   .gl-bar{display:none;}
 }
 /* 도시 여정 바 */
-.city-route-bar{padding:.4rem .85rem .5rem;border-top:1px solid var(--sand2);position:relative;}
-.city-route-empty{font-size:10px;color:var(--ink3);padding:.1rem 0;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+
+
 /* 도시 추가 모달 */
-.city-add-modal{background:var(--white);border-radius:14px 14px 0 0;padding:1rem 1.1rem 2rem;border:1px solid var(--sand2);box-shadow:0 -4px 24px rgba(28,26,20,.15);position:fixed;bottom:0;left:0;right:0;z-index:200;max-height:70vh;overflow-y:auto;}
-.city-add-row{display:flex;align-items:center;gap:6px;margin-bottom:7px;}
-.city-swatch{width:14px;height:14px;border-radius:3px;flex-shrink:0;}
-.city-inp{flex:1;font-family:'DM Sans',sans-serif;font-size:13px;border:1px solid var(--sand3);border-radius:7px;padding:5px 9px;color:var(--ink);outline:none;background:var(--white);}
-.city-inp:focus{border-color:var(--terra);}
-.city-inp-sm{width:70px;font-family:'DM Sans',sans-serif;font-size:12px;border:1px solid var(--sand3);border-radius:7px;padding:5px 7px;color:var(--ink);outline:none;background:var(--white);-webkit-appearance:none;}
-.city-inp-sm:focus{border-color:var(--terra);}
-.cr-end-handle{position:absolute;top:8px;width:12px;height:22px;cursor:col-resize;z-index:10;display:flex;align-items:center;justify-content:center;}
+
+
+
+
+
+
+
+
 .cr-end-handle-inner{width:4px;height:18px;background:rgba(28,26,20,.2);border-radius:2px;}
 .cr-end-handle:hover .cr-end-handle-inner{background:var(--terra);}
 
@@ -596,7 +596,6 @@ table.sp .editable-cell .ci{display:block;padding:4px 8px;min-height:36px;line-h
   </div>
   <div class="pl-sub">
     <div class="day-tabs-bar" id="dayTabsBar"></div>
-    <div class="city-route-bar" id="cityRouteBar" style="display:none;"></div>
     <div class="summary-bar" id="summaryBar"></div>
   </div>
 
@@ -1040,7 +1039,7 @@ function openTrip(id){
 }
 
 function renderAll(){
-  renderDayTabs();renderSummary();renderCityRouteBar();
+  renderDayTabs();renderSummary();
   if(isMobile()){renderMobContent();}
   else{renderDeskTable();renderDeskTimeline();renderDeskChecklist();}
 }
@@ -1061,260 +1060,12 @@ function renderSummary(){
 }
 
 /* ── 도시 여정 바 ── */
-const CITY_COLORS=['#C85A2A','#2A6B7C','#5A7A5A','#C8A84B','#6B6550','#7A3A6A','#2A5A7C','#7A5A2A'];
-
-/* ── 도시 여정 바 (B안) ── 
-   cityRoute: [{city, startDay, endDay, moveTime, color}]
-   startDay/endDay: 1-based (Day 1 = 1, Day 11 = 11)
-   바 표시: (startDay-1)/total ~ endDay/total
-*/
-
-function getCityRoute(trip){
-  var route=trip.cityRoute||[];
-  // 구버전 day-based → pct-based 마이그레이션
-  route.forEach(function(seg){
-    if(seg.startPct===undefined){
-      var total=genDays(trip.start,trip.end).length;
-      seg.startPct=(seg.startDay-1)/total;
-      seg.endPct=seg.endDay/total;
-    }
-  });
-  return route;
-}
-
-function renderCityRouteBar(){
-  var trip=getTrip(currentId); if(!trip) return;
-  var bar=document.getElementById('cityRouteBar'); if(!bar) return;
-  var route=getCityRoute(trip);
-
-  if(!route.length){
-    bar.style.display='flex';
-    bar.innerHTML='<div class="city-route-empty"><i class="ti ti-map-pin" style="font-size:12px"></i><span>방문 도시를 등록하면 여정이 표시됩니다</span><button onclick="openCityAddPanel()" style="font-family:DM Sans,sans-serif;font-size:10px;padding:2px 9px;border:1px solid var(--sand3);border-radius:5px;background:var(--white);color:var(--terra);cursor:pointer;font-weight:500;">+ 도시 추가</button></div>';
-    return;
-  }
-
-  bar.style.display='block';
-
-  var html='<div id="crOuter" style="position:relative;margin-top:32px;margin-bottom:6px;">';
-
-  // 바
-  html+='<div style="position:relative;height:26px;border-radius:6px;background:var(--sand2);overflow:visible;" id="crBar">';
-
-  route.forEach(function(seg,si){
-    var left=seg.startPct*100;
-    var w=(seg.endPct-seg.startPct)*100;
-    var isNarrow=w<8;
-    var label=seg.city.length>8?seg.city.slice(0,7)+'…':seg.city;
-
-    html+='<div style="position:absolute;left:'+left+'%;width:'+w+'%;height:26px;background:'+seg.color+';display:flex;align-items:center;justify-content:center;overflow:visible;">';
-
-    if(isNarrow){
-      // 좁은 영역: 바 위에 라벨 플로팅
-      var labelLeft=50; // 기본 중앙
-      html+='<div style="position:absolute;bottom:30px;left:50%;transform:translateX(-50%);white-space:nowrap;display:flex;flex-direction:column;align-items:center;pointer-events:none;z-index:5;">'
-        +'<div style="background:'+seg.color+';color:#fff;font-size:10px;font-weight:500;padding:2px 7px;border-radius:4px;">'+label+'</div>'
-        +'<div style="width:1px;height:6px;background:'+seg.color+';"></div>'
-        +'</div>';
-    } else {
-      // 넓은 영역: 바 안에 텍스트
-      html+='<span style="font-size:10px;font-weight:500;color:#fff;overflow:hidden;white-space:nowrap;padding:0 4px;text-overflow:ellipsis;max-width:100%;">'+label+'</span>';
-    }
-
-    html+='</div>';
-  });
-
-  html+='</div>'; // crBar 닫기
-
-  // 경계선 핸들 (중간)
-  route.forEach(function(seg,si){
-    if(si===0) return;
-    var pct=seg.startPct*100;
-    var moveLabel=seg.moveTime?seg.moveTime+' 이동':'이동';
-    html+='<div class="cr-handle" data-si="'+si+'" style="position:absolute;left:'+pct+'%;top:4px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;cursor:col-resize;z-index:10;width:14px;height:18px;">'
-      +'<div style="width:3px;height:18px;background:#fff;border-radius:2px;opacity:.9;"></div>'
-      +'<div style="position:absolute;top:-18px;background:var(--ink);color:#fff;font-size:9px;padding:1px 5px;border-radius:3px;white-space:nowrap;">'+moveLabel+'</div>'
-      +'</div>';
-  });
-
-  // 왼쪽 끝 핸들
-  var lp=route[0].startPct*100;
-  html+='<div id="crLeft" style="position:absolute;left:'+lp+'%;top:0;transform:translateX(-50%);width:10px;height:26px;cursor:col-resize;z-index:10;display:flex;align-items:center;justify-content:center;">'
-    +'<div style="width:4px;height:20px;background:rgba(28,26,20,.35);border-radius:2px;"></div></div>';
-
-  // 오른쪽 끝 핸들
-  var rp=route[route.length-1].endPct*100;
-  html+='<div id="crRight" style="position:absolute;left:'+rp+'%;top:0;transform:translateX(-50%);width:10px;height:26px;cursor:col-resize;z-index:10;display:flex;align-items:center;justify-content:center;">'
-    +'<div style="width:4px;height:20px;background:rgba(28,26,20,.35);border-radius:2px;"></div></div>';
-
-  html+='</div>'; // crOuter 닫기
-
-  // 범례 + 편집
-  var seen={};
-  html+='<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">';
-  route.forEach(function(seg){
-    if(seen[seg.city]) return; seen[seg.city]=1;
-    var sp=Math.round(seg.startPct*100);
-    var ep=Math.round(seg.endPct*100);
-    html+='<div style="display:flex;align-items:center;gap:3px;font-size:10px;color:var(--ink3);"><div style="width:8px;height:8px;border-radius:2px;background:'+seg.color+';flex-shrink:0;"></div>'+seg.city+' ('+sp+'%–'+ep+'%)</div>';
-  });
-  html+='<button onclick="openCityAddPanel()" style="margin-left:auto;font-family:DM Sans,sans-serif;font-size:10px;padding:2px 9px;border:1px solid var(--sand3);border-radius:5px;background:var(--white);color:var(--ink3);cursor:pointer;">편집</button>';
-  html+='</div>';
-
-  bar.innerHTML=html;
-
-  var outer=document.getElementById('crOuter');
-  var rect=null;
-  function getRect(){ rect=outer.getBoundingClientRect(); return rect; }
-
-  function makeDrag(el, onDrag){
-    function startDrag(clientX){
-      getRect();
-      document.body.style.cursor='col-resize';
-      document.body.style.userSelect='none';
-      function move(clientX){
-        var x=clientX-rect.left;
-        var pct=Math.max(0,Math.min(1,x/rect.width));
-        onDrag(pct);
-        var trip2=getTrip(currentId); if(trip2) trip2.cityRoute=route;
-        renderCityRouteBar();
-      }
-      function end(){
-        document.body.style.cursor=''; document.body.style.userSelect='';
-        persist();
-        document.removeEventListener('mousemove',mm);
-        document.removeEventListener('mouseup',mu);
-        document.removeEventListener('touchmove',tm);
-        document.removeEventListener('touchend',te);
-      }
-      function mm(e){ move(e.clientX); }
-      function mu(){ end(); }
-      function tm(e){ e.preventDefault(); move(e.touches[0].clientX); }
-      function te(){ end(); }
-      document.addEventListener('mousemove',mm);
-      document.addEventListener('mouseup',mu);
-      document.addEventListener('touchmove',tm,{passive:false});
-      document.addEventListener('touchend',te);
-    }
-    el.addEventListener('mousedown',function(e){ e.preventDefault(); e.stopPropagation(); startDrag(e.clientX); });
-    el.addEventListener('touchstart',function(e){ e.preventDefault(); e.stopPropagation(); startDrag(e.touches[0].clientX); },{passive:false});
-  }
-
-  // 중간 경계선 드래그
-  bar.querySelectorAll('.cr-handle').forEach(function(handle){
-    var si=parseInt(handle.dataset.si);
-    makeDrag(handle,function(pct){
-      var minP=route[si-1].startPct+0.01;
-      var maxP=route[si].endPct-0.01;
-      pct=Math.max(minP,Math.min(maxP,pct));
-      route[si-1].endPct=pct;
-      route[si].startPct=pct;
-    });
-  });
-
-  // 왼쪽 끝
-  var crL=bar.querySelector('#crLeft');
-  if(crL) makeDrag(crL,function(pct){
-    route[0].startPct=Math.max(0,Math.min(route[0].endPct-0.01,pct));
-  });
-
-  // 오른쪽 끝
-  var crR=bar.querySelector('#crRight');
-  if(crR) makeDrag(crR,function(pct){
-    var last=route[route.length-1];
-    last.endPct=Math.max(last.startPct+0.01,Math.min(1,pct));
-  });
-}
 
 
-function openCityAddPanel(){
-  closeCityAddPanel();
-  var trip=getTrip(currentId); if(!trip) return;
-  var days=genDays(trip.start,trip.end);
-  var total=days.length;
-  var route=getCityRoute(trip);
-  var nextColor=CITY_COLORS[route.length%CITY_COLORS.length];
-  var nextStart=route.length?route[route.length-1].endDay+1:1;
 
-  var html='<div class="city-add-modal" id="cityAddPanel">'
-    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.65rem;">'
-    +'<span style="font-size:11px;font-weight:500;color:var(--ink2);">도시 여정 편집</span>'
-    +'<button onclick="closeCityAddPanel()" style="background:none;border:none;cursor:pointer;color:var(--ink3);font-size:15px;"><i class="ti ti-x"></i></button>'
-    +'</div>';
 
-  if(route.length){
-    route.forEach(function(seg,si){
-      html+='<div class="city-add-row">'
-        +'<div class="city-swatch" style="background:'+seg.color+'"></div>'
-        +'<input class="city-inp" value="'+esc(seg.city)+'" placeholder="도시명" data-rsi="'+si+'" data-rfield="city" oninput="updateRoute(this)">'
-        +'<span style="font-size:10px;color:var(--ink3);">D</span>'
-        +'<input class="city-inp-sm" type="number" min="1" max="'+total+'" value="'+seg.startDay+'" data-rsi="'+si+'" data-rfield="startDay" onchange="updateRoute(this)">'
-        +'<span style="font-size:10px;color:var(--ink3);">–</span>'
-        +'<input class="city-inp-sm" type="number" min="1" max="'+total+'" value="'+seg.endDay+'" data-rsi="'+si+'" data-rfield="endDay" onchange="updateRoute(this)">'
-        +'<input class="city-inp-sm" value="'+esc(seg.moveTime||'')+'" placeholder="이동시각" data-rsi="'+si+'" data-rfield="moveTime" oninput="updateRoute(this)" style="width:76px;">'
-        +'<button onclick="deleteRoute('+si+')" style="background:none;border:none;cursor:pointer;color:var(--ink3);font-size:13px;"><i class="ti ti-trash"></i></button>'
-        +'</div>';
-    });
-  }
 
-  html+='<div class="city-add-row" style="border-top:1px solid var(--sand2);padding-top:.5rem;margin-top:.3rem;">'
-    +'<div class="city-swatch" style="background:'+nextColor+'"></div>'
-    +'<input class="city-inp" id="newCityName" placeholder="도시명 (예: 바르셀로나)">'
-    +'<span style="font-size:10px;color:var(--ink3);">D</span>'
-    +'<input class="city-inp-sm" type="number" id="newCityStart" min="1" max="'+total+'" value="'+Math.min(nextStart,total)+'">'
-    +'<span style="font-size:10px;color:var(--ink3);">–</span>'
-    +'<input class="city-inp-sm" type="number" id="newCityEnd" min="1" max="'+total+'" value="'+total+'">'
-    +'<input class="city-inp-sm" id="newCityMove" placeholder="이동시각" style="width:76px;">'
-    +'<button onclick="addCityRoute()" style="font-family:DM Sans,sans-serif;font-size:11px;font-weight:500;background:var(--terra);color:#fff;border:none;border-radius:6px;padding:4px 10px;cursor:pointer;">추가</button>'
-    +'</div>'
-    +'<div style="font-size:10px;color:var(--ink3);margin-top:.4rem;">바의 흰 경계선을 드래그해서 범위 조절 가능</div>'
-    +'</div>';
 
-  // 오버레이 배경
-  var overlay=document.createElement('div');
-  overlay.id='cityPanelOverlay';
-  overlay.style.cssText='position:fixed;inset:0;background:rgba(28,26,20,.4);z-index:199;';
-  overlay.onclick=closeCityAddPanel;
-  document.body.appendChild(overlay);
-  document.body.insertAdjacentHTML('beforeend',html);
-}
-
-function closeCityAddPanel(){ document.getElementById('cityAddPanel')?.remove(); document.getElementById('cityPanelOverlay')?.remove(); }
-
-function addCityRoute(){
-  var trip=getTrip(currentId); if(!trip) return;
-  var city=document.getElementById('newCityName').value.trim();
-  if(!city){alert('도시명을 입력해주세요.');return;}
-  var total=genDays(trip.start,trip.end).length;
-  var startDay=Math.max(1,parseInt(document.getElementById('newCityStart').value)||1);
-  var endDay=Math.max(startDay,parseInt(document.getElementById('newCityEnd').value)||startDay);
-  var moveTime=document.getElementById('newCityMove').value.trim();
-  if(!trip.cityRoute) trip.cityRoute=[];
-  var color=CITY_COLORS[trip.cityRoute.length%CITY_COLORS.length];
-  trip.cityRoute.push({
-    city:city,
-    startDay:startDay,endDay:endDay,
-    startPct:(startDay-1)/total,
-    endPct:endDay/total,
-    moveTime:moveTime,color:color
-  });
-  trip.cityRoute.sort(function(a,b){return a.startPct-b.startPct;});
-  persist();closeCityAddPanel();renderCityRouteBar();
-}
-
-function deleteRoute(si){
-  var trip=getTrip(currentId); if(!trip||!trip.cityRoute) return;
-  trip.cityRoute.splice(si,1);
-  persist();closeCityAddPanel();renderCityRouteBar();
-}
-
-function updateRoute(inp){
-  var trip=getTrip(currentId); if(!trip||!trip.cityRoute) return;
-  var si=parseInt(inp.dataset.rsi);
-  var field=inp.dataset.rfield;
-  if(field==='startDay'||field==='endDay') trip.cityRoute[si][field]=Math.max(1,parseInt(inp.value)||1);
-  else trip.cityRoute[si][field]=inp.value;
-  persist();renderCityRouteBar();
-}
 
 
 function setMobTab(tab){
@@ -1407,14 +1158,11 @@ function renderMobTable(){
       {val:'rest',label:'🛏 숙박'},{val:'etc',label:'• 기타'}
     ];
     const transportOpts=['—','도보','버스','지하철','택시/우버','렌터카','기차','비행기','배/선박'];
+    const contentDisp=`${cat.emoji} ${esc(r.content)||'내용 입력...'}`;
     return `<tr data-rowid="${r.id}" data-dk="${activeDayKey}">
-      <td><div class="ci time-cell ${st?'':'empty'}" data-tc="${r.id}" data-dk="${activeDayKey}" style="cursor:pointer;font-size:11px">
-        ${timeDisp}<i class="ti ti-clock" style="font-size:9px;opacity:.3;margin-left:auto"></i></div></td>
+      <td><div class="ci time-cell ${st?'':'empty'}" data-tc="${r.id}" data-dk="${activeDayKey}" style="cursor:pointer;font-size:11px;">${timeDisp}</div></td>
       <td class="sp-col-hide">${makeEditableCell(r,'cat',`<span class="cat-badge cb-${r.cat}">${cat.emoji} ${cat.label}</span>`,null,catOpts)}</td>
-      <td style="display:flex;align-items:center;gap:4px;padding:0;">
-        <span style="font-size:14px;padding-left:8px;flex-shrink:0;">${cat.emoji}</span>
-        <div style="flex:1;min-width:0;">${makeEditableCell(r,'content',esc(r.content)||'내용 입력...')}</div>
-      </td>
+      <td>${makeEditableCell(r,'content',contentDisp)}</td>
       <td class="sp-col-hide">${makeEditableCell(r,'cost',r.cost?'₩'+fmtCost(r.cost):'—','number')}</td>
       <td class="sp-col-hide">${makeEditableCell(r,'transport',r.transport||'—',null,transportOpts.map(v=>({val:v,label:v})))}</td>
       <td class="sp-col-hide">${makeEditableCell(r,'region',esc(r.region)||'소재지...')}</td>
@@ -2332,6 +2080,7 @@ function saveInfo(){
 
 /* ── 공통 터치/마우스 드래그 헬퍼 ── */
 function addDragListener(el, onStart, onMove, onEnd){
+  // 마우스 이벤트 (데스크탑)
   el.addEventListener('mousedown', function(e){
     e.preventDefault();
     onStart(e.clientX, e.clientY);
@@ -2340,15 +2089,15 @@ function addDragListener(el, onStart, onMove, onEnd){
     document.addEventListener('mousemove',mm);
     document.addEventListener('mouseup',mu);
   });
+  // 터치 이벤트 - passive:true로 스크롤 허용
   el.addEventListener('touchstart', function(e){
-    e.preventDefault();
     var t=e.touches[0];
     onStart(t.clientX, t.clientY);
     function tm(e){ var t=e.touches[0]; onMove(t.clientX, t.clientY); }
     function te(){ onEnd(); document.removeEventListener('touchmove',tm); document.removeEventListener('touchend',te); }
-    document.addEventListener('touchmove',tm,{passive:false});
+    document.addEventListener('touchmove',tm,{passive:true});
     document.addEventListener('touchend',te);
-  },{passive:false});
+  },{passive:true});
 }
 
 /* ── 컬럼 리사이저 ── */
@@ -2481,11 +2230,10 @@ function setupColResizers(){
   },{passive:true});
   document.addEventListener('touchmove',function(e){
     if(!cDrag||!cTh) return;
-    e.preventDefault();
     var t=e.touches[0];
     var nw=Math.max(40,cSW+(t.clientX-cSX));
     cTh.style.width=nw+'px'; cTh.style.minWidth=nw+'px'; cTh.style.maxWidth=nw+'px';
-  },{passive:false});
+  },{passive:true});
   document.addEventListener('touchend',function(){
     if(cDrag){ cDrag=false; cTh=null; }
   });
