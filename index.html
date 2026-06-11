@@ -593,6 +593,25 @@ table.sp td{overflow:hidden;}
   </div>
   <div class="pl-sub">
     <div class="day-tabs-bar" id="dayTabsBar"></div>
+    <!-- 날씨/환율/여행정보 바 -->
+    <div id="tripInfoBar" style="display:none;border-bottom:0.5px solid var(--sand2);">
+      <div style="display:flex;align-items:stretch;">
+        <div id="tibWeather" style="flex:1;padding:7px 10px;display:flex;align-items:center;gap:6px;border-right:0.5px solid var(--sand2);cursor:default;">
+          <span id="tibWeatherIcon" style="font-size:20px;">⏳</span>
+          <div><div id="tibWeatherTemp" style="font-size:13px;font-weight:500;color:var(--ink);">—</div>
+          <div id="tibWeatherCity" style="font-size:10px;color:var(--ink3);">로딩중</div></div>
+        </div>
+        <div id="tibRate" style="flex:1;padding:7px 10px;display:flex;align-items:center;gap:6px;border-right:0.5px solid var(--sand2);cursor:default;">
+          <span style="font-size:15px;color:#C8A84B;">₩</span>
+          <div><div id="tibRateMain" style="font-size:12px;font-weight:500;color:var(--ink);">—</div>
+          <div id="tibRateSub" style="font-size:10px;color:var(--ink3);">실시간 환율</div></div>
+        </div>
+        <div onclick="goTripCountryInfo()" style="padding:7px 12px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;color:#C85A2A;-webkit-tap-highlight-color:transparent;gap:2px;">
+          <i class="ti ti-info-circle" style="font-size:18px;"></i>
+          <div style="font-size:10px;font-weight:500;line-height:1.2;text-align:center;">여행<br>정보</div>
+        </div>
+      </div>
+    </div>
     <div class="summary-bar" id="summaryBar"></div>
   </div>
 
@@ -726,6 +745,30 @@ table.sp td{overflow:hidden;}
     <div class="gl-mh"><div class="gl-mt">여행 수정</div><button class="gl-mc" id="btnCloseEditTrip"><i class="ti ti-x"></i></button></div>
     <div class="gl-mb">
       <div class="gl-field"><label>여행 이름</label><input type="text" id="etName" placeholder="여행 이름"></div>
+      <div class="gl-field"><label>여행 국가</label>
+        <select id="etCountry" style="width:100%;font-family:'DM Sans',sans-serif;font-size:16px;padding:10px 14px;border:1.5px solid var(--sand3);border-radius:10px;background:var(--white);color:var(--ink);-webkit-appearance:none;outline:none;">
+          <option value="">— 국가 선택 —</option>
+          <option value="🇯🇵|일본|JPY|Tokyo|JP">🇯🇵 일본</option>
+          <option value="🇨🇳|중국|CNY|Beijing|CN">🇨🇳 중국</option>
+          <option value="🇻🇳|베트남|VND|Hanoi|VN">🇻🇳 베트남</option>
+          <option value="🇹🇭|태국|THB|Bangkok|TH">🇹🇭 태국</option>
+          <option value="🇸🇬|싱가포르|SGD|Singapore|SG">🇸🇬 싱가포르</option>
+          <option value="🇭🇰|홍콩|HKD|Hong Kong|HK">🇭🇰 홍콩</option>
+          <option value="🇦🇪|아랍에미리트|AED|Dubai|AE">🇦🇪 아랍에미리트</option>
+          <option value="🇬🇧|영국|GBP|London|GB">🇬🇧 영국</option>
+          <option value="🇫🇷|프랑스|EUR|Paris|FR">🇫🇷 프랑스</option>
+          <option value="🇩🇪|독일|EUR|Berlin|DE">🇩🇪 독일</option>
+          <option value="🇮🇹|이탈리아|EUR|Rome|IT">🇮🇹 이탈리아</option>
+          <option value="🇪🇸|스페인|EUR|Madrid|ES">🇪🇸 스페인</option>
+          <option value="🇺🇸|미국|USD|New York|US">🇺🇸 미국</option>
+          <option value="🇨🇦|캐나다|CAD|Toronto|CA">🇨🇦 캐나다</option>
+          <option value="🇦🇺|호주|AUD|Sydney|AU">🇦🇺 호주</option>
+          <option value="🇹🇷|튀르키예|TRY|Istanbul|TR">🇹🇷 튀르키예</option>
+          <option value="🇬🇷|그리스|EUR|Athens|GR">🇬🇷 그리스</option>
+          <option value="🇲🇻|몰디브|MVR|Male|MV">🇲🇻 몰디브</option>
+          <option value="🇲🇦|모로코|MAD|Casablanca|MA">🇲🇦 모로코</option>
+        </select>
+      </div>
       <div class="preview-name" id="etPreview"></div>
       <div class="gl-two-col">
         <div class="gl-field"><label>출발일</label><input type="date" id="etStart"></div>
@@ -753,6 +796,37 @@ table.sp td{overflow:hidden;}
     <div class="gl-mh"><div class="gl-mt">새 여행 만들기</div><button class="gl-mc" id="btnCloseNewTrip"><i class="ti ti-x"></i></button></div>
     <div class="gl-mb">
       <div class="gl-field"><label>여행 이름</label><input type="text" id="ntName" placeholder="예: 도쿄 벚꽃 여행"></div>
+      <div class="gl-field"><label>여행 국가 (선택)</label>
+        <select id="ntCountry" style="width:100%;font-family:'DM Sans',sans-serif;font-size:16px;padding:10px 14px;border:1.5px solid var(--sand3);border-radius:10px;background:var(--white);color:var(--ink);-webkit-appearance:none;outline:none;">
+          <option value="">— 국가 선택 —</option>
+          <option value="🇯🇵|일본|JPY|Tokyo|JP">🇯🇵 일본</option>
+          <option value="🇨🇳|중국|CNY|Beijing|CN">🇨🇳 중국</option>
+          <option value="🇹🇼|대만|TWD|Taipei|TW">🇹🇼 대만</option>
+          <option value="🇻🇳|베트남|VND|Hanoi|VN">🇻🇳 베트남</option>
+          <option value="🇹🇭|태국|THB|Bangkok|TH">🇹🇭 태국</option>
+          <option value="🇸🇬|싱가포르|SGD|Singapore|SG">🇸🇬 싱가포르</option>
+          <option value="🇮🇩|인도네시아|IDR|Jakarta|ID">🇮🇩 인도네시아</option>
+          <option value="🇵🇭|필리핀|PHP|Manila|PH">🇵🇭 필리핀</option>
+          <option value="🇲🇾|말레이시아|MYR|Kuala Lumpur|MY">🇲🇾 말레이시아</option>
+          <option value="🇭🇰|홍콩|HKD|Hong Kong|HK">🇭🇰 홍콩</option>
+          <option value="🇦🇪|아랍에미리트|AED|Dubai|AE">🇦🇪 아랍에미리트</option>
+          <option value="🇹🇷|튀르키예|TRY|Istanbul|TR">🇹🇷 튀르키예</option>
+          <option value="🇬🇧|영국|GBP|London|GB">🇬🇧 영국</option>
+          <option value="🇫🇷|프랑스|EUR|Paris|FR">🇫🇷 프랑스</option>
+          <option value="🇩🇪|독일|EUR|Berlin|DE">🇩🇪 독일</option>
+          <option value="🇮🇹|이탈리아|EUR|Rome|IT">🇮🇹 이탈리아</option>
+          <option value="🇪🇸|스페인|EUR|Madrid|ES">🇪🇸 스페인</option>
+          <option value="🇵🇹|포르투갈|EUR|Lisbon|PT">🇵🇹 포르투갈</option>
+          <option value="🇨🇭|스위스|CHF|Bern|CH">🇨🇭 스위스</option>
+          <option value="🇬🇷|그리스|EUR|Athens|GR">🇬🇷 그리스</option>
+          <option value="🇺🇸|미국|USD|New York|US">🇺🇸 미국</option>
+          <option value="🇨🇦|캐나다|CAD|Toronto|CA">🇨🇦 캐나다</option>
+          <option value="🇦🇺|호주|AUD|Sydney|AU">🇦🇺 호주</option>
+          <option value="🇳🇿|뉴질랜드|NZD|Auckland|NZ">🇳🇿 뉴질랜드</option>
+          <option value="🇲🇻|몰디브|MVR|Male|MV">🇲🇻 몰디브</option>
+          <option value="🇲🇦|모로코|MAD|Casablanca|MA">🇲🇦 모로코</option>
+        </select>
+      </div>
       <div class="preview-name" id="ntPreview">여행 이름을 입력해주세요</div>
       <div class="gl-two-col">
         <div class="gl-field"><label>출발일</label><input type="date" id="ntStart"></div>
@@ -1033,12 +1107,12 @@ function openTrip(id){
   showPage('plannerPage');
   requestAnimationFrame(function(){
     if(window._initPaneSizes) window._initPaneSizes();
-    // 컬럼 table-layout 재적용
     ['mobTable','deskTable'].forEach(function(id){
       var t=document.getElementById(id);
       if(t) t.style.tableLayout='fixed';
     });
   });
+  loadTripInfoBar();
   renderAll();
 }
 
@@ -1148,7 +1222,6 @@ function saveInlineField(sel){
 }
 
 /* ── 모바일 일정표 ── */
-// 인라인 편집 필드 렌더링 (외부 함수)
 function mobFld(r, field, label, value, type, opts){
   const ef=window._mobEditField;
   const isEditing=window._mobExpandedId===r.id && ef && ef.id===r.id && ef.field===field;
@@ -1179,6 +1252,7 @@ function mobFld(r, field, label, value, type, opts){
 }
 
 function mobStartEdit(id,field){
+  if(window._readOnly) return;
   window._mobEditField={id,field};
   renderMobTable();
   setTimeout(()=>{
@@ -1201,6 +1275,77 @@ function mobSaveField(id,field,value,dk){
   persist();
   renderMobTable();
   renderSummary();
+}
+
+// 카드 인라인 체크리스트 렌더링
+function mobCardChecklist(r){
+  const cl=getChecklist();
+  const items=cl[r.id]||[];
+  const done=items.filter(i=>i.done).length;
+  const suggs=getSuggestions(r);
+
+  let html=`<div style="border-top:0.5px solid var(--sand2);padding:12px 14px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+      <div style="display:flex;align-items:center;gap:6px;">
+        <i class="ti ti-checklist" style="font-size:14px;color:#C85A2A;"></i>
+        <span style="font-size:12px;font-weight:500;color:var(--ink2);">체크리스트</span>
+      </div>
+      ${items.length?`<span style="font-size:11px;color:#993C1D;background:#FAECE7;border-radius:999px;padding:2px 8px;">${done}/${items.length}</span>`:''}
+    </div>`;
+
+  if(items.length){
+    html+=items.map(item=>`
+      <div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:0.5px solid var(--sand2);">
+        <div onclick="mobClToggle('${r.id}','${item.id}')" style="width:22px;height:22px;border-radius:6px;${item.done?'background:#5A7A5A;':'border:1.5px solid var(--sand3);background:var(--white);'}display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;-webkit-tap-highlight-color:transparent;">
+          ${item.done?'<i class="ti ti-check" style="font-size:12px;color:#fff;pointer-events:none;"></i>':''}
+        </div>
+        <span style="flex:1;font-size:13px;color:var(--ink);${item.done?'text-decoration:line-through;color:var(--ink3);':''}">${esc(item.text)}</span>
+        <div onclick="mobClDel('${r.id}','${item.id}')" style="width:30px;height:30px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink3);-webkit-tap-highlight-color:transparent;">
+          <i class="ti ti-x" style="font-size:13px;pointer-events:none;"></i>
+        </div>
+      </div>`).join('');
+  } else if(suggs.length){
+    html+=`<div style="font-size:11px;color:var(--ink3);margin-bottom:6px;">추천 항목 탭해서 추가</div>`;
+    html+=suggs.map(s=>`
+      <div onclick="mobClAddSugg('${r.id}','${esc(s)}')" style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;-webkit-tap-highlight-color:transparent;">
+        <div style="width:22px;height:22px;border-radius:6px;border:1.5px solid #C85A2A;display:flex;align-items:center;justify-content:center;color:#C85A2A;font-size:14px;pointer-events:none;">+</div>
+        <span style="font-size:13px;color:var(--ink3);">${esc(s)}</span>
+      </div>`).join('');
+  }
+
+  html+=`<div style="display:flex;gap:8px;margin-top:8px;">
+    <input id="mobClInp_${r.id}" placeholder="할 일 추가..." 
+      style="flex:1;font-family:'DM Sans',sans-serif;font-size:14px;border:0.5px solid var(--sand3);border-radius:9px;padding:8px 10px;background:var(--sand);color:var(--ink);outline:none;"
+      onkeydown="if(event.key==='Enter')mobClAdd('${r.id}')">
+    <button onclick="mobClAdd('${r.id}')" style="font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;background:#C85A2A;color:#fff;border:none;border-radius:9px;padding:8px 14px;cursor:pointer;">추가</button>
+  </div></div>`;
+  return html;
+}
+
+function mobClAdd(evId){
+  const inp=document.getElementById('mobClInp_'+evId); if(!inp) return;
+  const text=inp.value.trim(); if(!text) return;
+  const trip=getTrip(currentId),cl=getChecklist();
+  if(!cl[evId])cl[evId]=[];
+  cl[evId].push({id:'ci'+Date.now(),text,done:false});
+  trip.checklist=cl;persistCl();
+  inp.value='';renderMobTable();
+}
+function mobClToggle(evId,itemId){
+  const trip=getTrip(currentId),cl=getChecklist();
+  const item=(cl[evId]||[]).find(i=>i.id===itemId);
+  if(item){item.done=!item.done;trip.checklist=cl;persistCl();renderMobTable();}
+}
+function mobClDel(evId,itemId){
+  const trip=getTrip(currentId),cl=getChecklist();
+  cl[evId]=(cl[evId]||[]).filter(i=>i.id!==itemId);
+  trip.checklist=cl;persistCl();renderMobTable();
+}
+function mobClAddSugg(evId,text){
+  const trip=getTrip(currentId),cl=getChecklist();
+  if(!cl[evId])cl[evId]=[];
+  cl[evId].push({id:'ci'+Date.now(),text,done:false});
+  trip.checklist=cl;persistCl();renderMobTable();
 }
 
 function renderMobTable(){
@@ -1234,12 +1379,17 @@ function renderMobTable(){
             <div style="width:34px;height:34px;border-radius:9px;background:rgba(${bgR},.12);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">${cat.emoji}</div>
             <div style="flex:1;min-width:0;">
               <div style="font-size:14px;font-weight:500;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(r.content)||'내용 없음'}</div>
-              <div style="font-size:12px;color:var(--ink3);margin-top:1px;">${timeDisp}</div>
+              <!-- 시간 클릭으로 수정 -->
+              <div class="mob-card-time" data-tc="${r.id}" data-dk="${activeDayKey}" 
+                style="font-size:12px;color:${st?'#C85A2A':'var(--ink3)'};margin-top:2px;display:inline-flex;align-items:center;gap:3px;cursor:pointer;-webkit-tap-highlight-color:transparent;"
+                onclick="event.stopPropagation();openTimePopup('${r.id}','${activeDayKey}',this)">
+                <i class="ti ti-clock" style="font-size:11px;"></i> ${timeDisp}
+              </div>
             </div>
             <i class="ti ti-chevron-${isExpanded?'up':'down'}" style="font-size:16px;color:${isExpanded?'#C85A2A':'var(--ink3)'};flex-shrink:0;"></i>
           </div>
-          <!-- 펼쳐진 세부내용 -->
           ${isExpanded?`
+          <!-- 세부내용 -->
           <div style="border-top:0.5px solid var(--sand2);padding:14px;display:grid;grid-template-columns:1fr 1fr;gap:14px;">
             ${mobFld(r,'content','내용',esc(r.content))}
             ${mobFld(r,'cost','비용(₩)',r.cost?fmtCost(r.cost):'')}
@@ -1248,12 +1398,17 @@ function renderMobTable(){
             ${mobFld(r,'region','소재지',r.region||'')}
             ${mobFld(r,'note','비고',r.note||'')}
             <div style="grid-column:1/-1;">
-              ${mobFld(r,'location','위치',r.location&&!isMapUrl(r.location)?r.location:r.location&&isMapUrl(r.location)?'지도 링크':'',)}
-              ${r.location&&isMapUrl(r.location)?`<div style="margin-top:4px;">${locHtml}</div>`:''}
+              <div style="font-size:11px;color:var(--ink3);margin-bottom:3px;letter-spacing:.04em;">위치</div>
+              ${r.location&&!isMapUrl(r.location)?
+                mobFld(r,'location','위치',r.location||''):
+                `<div onclick="mobStartEdit('${r.id}','location')" style="cursor:pointer;font-size:13px;color:var(--ink);border-bottom:1px dashed var(--sand3);padding-bottom:2px;">${locHtml}</div>`
+              }
             </div>
           </div>
-          <div style="padding:8px 14px;border-top:0.5px solid var(--sand2);display:flex;justify-content:space-between;align-items:center;background:var(--sand);">
-            <button class="mob-card-time" data-tc="${r.id}" data-dk="${activeDayKey}" style="font-family:'DM Sans',sans-serif;font-size:12px;color:var(--terra);background:rgba(200,90,42,.08);border:1px solid rgba(200,90,42,.2);border-radius:7px;padding:5px 10px;cursor:pointer;display:flex;align-items:center;gap:4px;"><i class="ti ti-clock" style="font-size:12px;"></i>${timeDisp}</button>
+          <!-- 체크리스트 -->
+          ${mobCardChecklist(r)}
+          <!-- 하단 액션 -->
+          <div style="padding:8px 14px;border-top:0.5px solid var(--sand2);display:flex;justify-content:flex-end;background:var(--sand);">
             <button class="row-del-btn" data-rdel="${r.id}" data-dk="${activeDayKey}" style="font-family:'DM Sans',sans-serif;font-size:12px;background:#FAECE7;border:0.5px solid #F0997B;border-radius:7px;padding:5px 12px;cursor:pointer;color:#993C1D;">삭제</button>
           </div>
           `:''}
@@ -1264,7 +1419,63 @@ function renderMobTable(){
   document.getElementById('tblFoot').innerHTML='';
 }
 
-/* ── 타임라인 인라인 체크리스트 ── */
+/* ── 플래너 상단 날씨/환율/여행정보 바 ── */
+async function loadTripInfoBar(){
+  const trip=getTrip(currentId); if(!trip||!trip.country) {
+    document.getElementById('tripInfoBar').style.display='none'; return;
+  }
+  const parts=trip.country.split('|');
+  if(parts.length<5){document.getElementById('tripInfoBar').style.display='none';return;}
+  const [flag,name,currency,city,code]=parts;
+  document.getElementById('tripInfoBar').style.display='block';
+  document.getElementById('tibWeatherCity').textContent=flag+' '+name;
+  document.getElementById('tibRateSub').textContent=currency+' 환율';
+
+  // 날씨
+  try{
+    const wcoords={
+      JP:[35.68,139.69],CN:[39.9,116.4],TW:[25.04,121.51],VN:[21.03,105.83],
+      TH:[13.75,100.52],SG:[1.35,103.82],ID:[-6.21,106.85],PH:[14.6,121.0],
+      MY:[3.15,101.7],HK:[22.3,114.17],AE:[25.2,55.27],TR:[41.01,28.95],
+      GB:[51.51,-0.13],FR:[48.85,2.35],DE:[52.52,13.4],IT:[41.9,12.48],
+      ES:[40.42,-3.7],PT:[38.72,-9.14],CH:[46.95,7.45],GR:[37.98,23.73],
+      US:[40.71,-74.01],CA:[43.65,-79.38],AU:[-33.87,151.21],NZ:[-36.86,174.77],
+      MV:[4.17,73.51],MA:[33.59,-7.62]
+    };
+    const coord=wcoords[code]||[35.68,139.69];
+    const wr=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${coord[0]}&longitude=${coord[1]}&current_weather=true`);
+    if(wr.ok){
+      const wd=await wr.json();
+      const temp=Math.round(wd.current_weather?.temperature||0);
+      const wc=wd.current_weather?.weathercode||0;
+      const wIcons={0:'☀️',1:'🌤',2:'⛅',3:'☁️',45:'🌫',48:'🌫',51:'🌦',61:'🌧',71:'❄️',80:'🌦',95:'⛈'};
+      const icon=wIcons[Math.floor(wc/10)*10]||wIcons[wc]||'🌡';
+      document.getElementById('tibWeatherIcon').textContent=icon;
+      document.getElementById('tibWeatherTemp').textContent=temp+'°C';
+    }
+  }catch(e){document.getElementById('tibWeatherTemp').textContent='—';}
+
+  // 환율
+  try{
+    if(currency==='KRW'){document.getElementById('tibRateMain').textContent='기준 통화';return;}
+    const er=await fetch(`https://open.er-api.com/v6/latest/KRW`);
+    if(er.ok){
+      const ed=await er.json();
+      const rate=ed.rates[currency];
+      if(rate){
+        const krwPer1=Math.round(1/rate);
+        document.getElementById('tibRateMain').textContent=`1${currency}=${krwPer1.toLocaleString()}원`;
+      }
+    }
+  }catch(e){document.getElementById('tibRateMain').textContent='—';}
+}
+
+function goTripCountryInfo(){
+  const trip=getTrip(currentId); if(!trip||!trip.country) return;
+  // 국가 정보 페이지로 이동하면서 해당 국가 선택
+  sessionStorage.setItem('tpv5_ci_country',trip.country);
+  openCountryInfoPage(trip.country);
+}
 function renderMobTimelineChecklist(){
   const existing=document.getElementById('tlInlineChecklist');
   if(existing) existing.remove();
@@ -1865,17 +2076,16 @@ document.addEventListener('click',function(e){
   /* 모바일 타임라인 블록 탭 */
     const mobTlBlock=t.closest('[data-mobtlid]');
   if(mobTlBlock){
+    // 타임라인 블록 탭 → 해당 일정 카드로 일정표 탭 이동
     const eid=mobTlBlock.dataset.mobtlid;
-    const dk=mobTlBlock.dataset.mobtldk;
-    // 같은 블록 다시 탭하면 닫기
-    if(window._tlChecklistEvtId===eid){
-      window._tlChecklistEvtId=null;
-      renderMobTimelineChecklist();
-    } else {
-      window._tlChecklistEvtId=eid;
-      window._tlChecklistDk=dk;
-      renderMobTimelineChecklist();
-    }
+    window._mobExpandedId=eid;
+    setMobTab('table');
+    renderMobTable();
+    // 해당 카드로 스크롤
+    setTimeout(()=>{
+      const row=document.querySelector(`[data-rowid="${eid}"]`);
+      if(row) row.scrollIntoView({behavior:'smooth',block:'center'});
+    },100);
     return;
   }
 
@@ -1973,6 +2183,7 @@ function openEditTripModal(id){
   const trip=getTrip(id);if(!trip)return;
   editTripId=id;etColor=trip.color||'#C85A2A';
   document.getElementById('etName').value=trip.name||'';
+  if(document.getElementById('etCountry')) document.getElementById('etCountry').value=trip.country||'';
   document.getElementById('etPreview').textContent=trip.name||'';
   document.getElementById('etStart').value=trip.start||'';
   document.getElementById('etEnd').value=trip.end||'';
@@ -2002,7 +2213,8 @@ function saveEditTrip(){
     trip.events=newEvents;
   }
 
-  trip.name=name;trip.start=start;trip.end=end;trip.color=etColor;
+  const etCountryVal=document.getElementById('etCountry').value||'';
+  trip.name=name;trip.start=start;trip.end=end;trip.color=etColor;trip.country=etCountryVal;
   persist();closeModal('editTripModal');renderArchive();
 }
 function openNewTripModal(){
@@ -2509,25 +2721,17 @@ if('serviceWorker' in navigator){
 /* ── 여행 공유 ── */
 async function shareTrip(tripId){
   const trip=getTrip(tripId); if(!trip) return;
-
-  // 공유 ID 생성 (없으면 새로 만들기)
   if(!trip.shareId) trip.shareId='s'+Math.random().toString(36).slice(2,10);
-  persist();
+  // persist 대신 trips만 저장 (페이지 이동 없이)
+  localStorage.setItem('tpv5_trips',JSON.stringify(trips));
 
   try{
-    // Supabase shared_trips 테이블에 upsert
     await sbFetch('/rest/v1/shared_trips',{
       method:'POST',
       headers:{'Prefer':'resolution=merge-duplicates,return=minimal'},
-      body:JSON.stringify({
-        id:trip.shareId,
-        trip:trip,
-        updated_at:new Date().toISOString()
-      })
+      body:JSON.stringify({id:trip.shareId,trip:trip,updated_at:new Date().toISOString()})
     });
-
     const url=location.origin+location.pathname+'?share='+trip.shareId;
-    // 클립보드 복사
     if(navigator.clipboard){
       await navigator.clipboard.writeText(url);
       showShareToast('링크가 복사됐습니다! 📋');
