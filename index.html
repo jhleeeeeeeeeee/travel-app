@@ -2413,28 +2413,25 @@ async function loadDayCityWeather(city){
           dayHtml=`<span style="font-size:15px;">${dayIcon}</span><span style="font-size:12px;font-weight:500;color:#1A1A2E;">${minT}°~${maxT}°</span><span style="font-size:10px;color:#999;">${dayDesc}</span>`;
         }
       } else if(diffDays<0){
-        // 과거 날짜
-        const dateStr=activeDayKey;
-        const hr=await fetch(`https://archive-api.open-meteo.com/v1/archive?latitude=${coord[0]}&longitude=${coord[1]}&start_date=${dateStr}&end_date=${dateStr}&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=auto`);
-        if(hr.ok){
-          const hd=await hr.json();
-          if(hd.daily&&hd.daily.time&&hd.daily.time.length){
-            const dayWc=String(hd.daily.weathercode[0]);
-            const maxT=Math.round(hd.daily.temperature_2m_max[0]);
-            const minT=Math.round(hd.daily.temperature_2m_min[0]);
-            const dayIcon=wIcons[dayWc]||'🌡️';
-            const dayDesc=wDescMap[dayWc]||'';
-            dayHtml=`<span style="font-size:15px;">${dayIcon}</span><span style="font-size:12px;font-weight:500;color:#1A1A2E;">${minT}°~${maxT}°</span><span style="font-size:10px;color:#999;">${dayDesc}</span>`;
+        // 과거 날짜 → historical API
+        try{
+          const hr=await fetch(`https://archive-api.open-meteo.com/v1/archive?latitude=${coord[0]}&longitude=${coord[1]}&start_date=${activeDayKey}&end_date=${activeDayKey}&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=auto`);
+          if(hr.ok){
+            const hd=await hr.json();
+            if(hd.daily&&hd.daily.time&&hd.daily.time.length){
+              const dayWc=String(hd.daily.weathercode[0]);
+              const maxT=Math.round(hd.daily.temperature_2m_max[0]);
+              const minT=Math.round(hd.daily.temperature_2m_min[0]);
+              const dayIcon=wIcons[dayWc]||'🌡️';
+              const dayDesc=wDescMap[dayWc]||wDescMap[String(Math.floor(Number(dayWc)/10)*10)]||'';
+              dayHtml=`<span style="font-size:15px;">${dayIcon}</span><span style="font-size:12px;font-weight:500;color:#1A1A2E;">${minT}°~${maxT}°</span><span style="font-size:10px;color:#999;">${dayDesc}</span>`;
+            }
           }
-        }
+        }catch(e){}
+        if(!dayHtml) dayHtml=`<span style="font-size:14px;">📅</span><span style="font-size:11px;color:#999;">데이터 없음</span>`;
       } else {
-        // 16일 이후 → 월 평균
-        const month=dayDate.getMonth();
-        const avgTemps=AVG_TEMP[city];
-        const avg=avgTemps?avgTemps[month]:null;
-        dayHtml=avg!==null
-          ?`<span style="font-size:13px;">📊</span><span style="font-size:12px;font-weight:500;color:#1A1A2E;">${avg}°C</span><span style="font-size:10px;color:#999;">${month+1}월 평균</span>`
-          :`<span style="font-size:11px;color:#999;">예보 범위 초과</span>`;
+        // 16일 이후 → 미정
+        dayHtml=`<span style="font-size:14px;">🔮</span><span style="font-size:11px;color:#999;">미정 (예보 범위 초과)</span>`;
       }
     }
 
@@ -2448,7 +2445,7 @@ async function loadDayCityWeather(city){
         <span style="font-size:10px;color:#999;">${curDesc}</span>
       </div>
       ${dayHtml?`<div style="display:flex;align-items:center;gap:4px;">
-        <span style="font-size:10px;color:#999;white-space:nowrap;">${diffDays<0?'당시':'예보'}</span>
+        <span style="font-size:10px;color:#999;white-space:nowrap;">${diffDays<0?'당시':diffDays<=15?'예보':'미정'}</span>
         ${dayHtml}
       </div>`:''}
     </div>`;
