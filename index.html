@@ -18,7 +18,7 @@
 :root{
   --terra:#C85A2A;--terra2:#E07040;
   --sage:#5A7A5A;--ocean:#2A6B7C;--gold:#C8A84B;
-  --sand:#F5EFE0;--sand2:#EDE5CE;--sand3:#D9CEAD;
+  --sand:#F7F3EE;--sand2:#EDE8E0;--sand3:#D8D0C8;
   --ink:#1C1A14;--ink2:#3D3A2E;--ink3:#6B6550;
   --white:#FDFAF3;
   --nav-h:56px; /* 하단 네비 높이 */
@@ -1470,31 +1470,37 @@ function renderMobTable(){
     const st=r.startTime||r.time||'',et=r.endTime||'';
     const timeDisp=st?(et?st+'–'+et:st):'시간 미설정';
     const isExpanded=expandedId===r.id;
-    const bgR=r.cat==='eat'?'200,90,42':r.cat==='move'?'42,107,124':r.cat==='see'?'90,122,90':r.cat==='rest'?'200,168,75':'107,101,80';
+    const catColor=r.cat==='eat'?'#E8513A':r.cat==='move'?'#3A8FC8':r.cat==='see'?'#3ABFB0':r.cat==='rest'?'#F0A500':'#888888';
+    const catBadgeBg=r.cat==='eat'?'#FF6B6B':r.cat==='move'?'#4A9FD4':r.cat==='see'?'#4ECDC4':r.cat==='rest'?'#FFB800':'#999999';
+    const catIconBg=r.cat==='eat'?'#FFE5E5':r.cat==='move'?'#E5F4FF':r.cat==='see'?'#E5FAF8':r.cat==='rest'?'#FFF8E1':'#F2F2F2';
+    const catLabel=r.cat==='eat'?'식사':r.cat==='move'?'이동':r.cat==='see'?'관광':r.cat==='rest'?'숙박':'기타';
     const locHtml=r.location?(isMapUrl(r.location)?
       `<a href="${esc(r.location)}" target="_blank" style="color:#C85A2A;font-size:13px;text-decoration:none;display:flex;align-items:center;gap:3px;"><i class="ti ti-map-pin" style="font-size:12px;"></i>지도 보기</a>`:
       `<span style="font-size:13px;">${esc(r.location)}</span>`):'—';
 
     return `<tr data-rowid="${r.id}">
-      <td colspan="9" style="padding:0;border-bottom:8px solid var(--sand);">
-        <div style="background:var(--white);border-radius:12px;overflow:hidden;border:0.5px solid rgba(${bgR},.35);">
-          <!-- 카드 헤더 -->
-          <div class="mob-card-header" data-cardid="${r.id}" style="display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;-webkit-tap-highlight-color:transparent;background:rgba(${bgR},.1);">
-            <div style="width:36px;height:36px;border-radius:10px;background:#fff;border:0.5px solid rgba(${bgR},.3);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">${cat.emoji}</div>
+      <td colspan="9" style="padding:0;padding-bottom:8px;border-bottom:none;">
+        <div style="background:#fff;border-radius:14px;overflow:hidden;border:none;">
+          <!-- 카드 헤더 C스타일 -->
+          <div class="mob-card-header" data-cardid="${r.id}" style="display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;-webkit-tap-highlight-color:transparent;background:#fff;">
+            <div style="width:38px;height:38px;border-radius:12px;background:${catIconBg};display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">${cat.emoji}</div>
             <div style="flex:1;min-width:0;">
-              <div style="font-size:14px;font-weight:500;color:rgb(${bgR});white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(r.content)||'내용 없음'}</div>
-              <div class="mob-card-time" data-tc="${r.id}" data-dk="${activeDayKey}"
-                style="font-size:11px;color:rgba(${bgR},.7);margin-top:2px;display:inline-flex;align-items:center;gap:3px;cursor:pointer;-webkit-tap-highlight-color:transparent;"
-                onclick="event.stopPropagation();openTimePopup('${r.id}','${activeDayKey}',this)">
-                <i class="ti ti-clock" style="font-size:10px;"></i> ${timeDisp}
+              <div style="font-size:14px;font-weight:500;color:#1A1A2E;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(r.content)||'내용 없음'}</div>
+              <div style="display:flex;align-items:center;gap:6px;margin-top:4px;">
+                <span style="font-size:10px;padding:2px 8px;border-radius:999px;background:${catBadgeBg};color:#fff;font-weight:500;">${catLabel}</span>
+                <div class="mob-card-time" data-tc="${r.id}" data-dk="${activeDayKey}"
+                  style="font-size:11px;color:#999;display:inline-flex;align-items:center;gap:3px;cursor:pointer;-webkit-tap-highlight-color:transparent;"
+                  onclick="event.stopPropagation();openTimePopup('${r.id}','${activeDayKey}',this)">
+                  <i class="ti ti-clock" style="font-size:10px;"></i> ${timeDisp}
+                </div>
               </div>
             </div>
-            <i class="ti ti-chevron-${isExpanded?'up':'down'}" style="font-size:15px;color:rgba(${bgR},.6);flex-shrink:0;"></i>
-            ${isExpanded?`<div onclick="event.stopPropagation();if(confirm('이 일정을 삭제할까요?')){const trip=getTrip(currentId);trip.events['${activeDayKey}']=(trip.events['${activeDayKey}']||[]).filter(r=>r.id!=='${r.id}');persist();renderAll();}" style="width:30px;height:30px;background:#fff;border:0.5px solid rgba(${bgR},.25);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;-webkit-tap-highlight-color:transparent;"><i class="ti ti-trash" style="font-size:14px;color:rgb(${bgR});pointer-events:none;"></i></div>`:''}
+            <i class="ti ti-chevron-${isExpanded?'up':'down'}" style="font-size:15px;color:#CCC;flex-shrink:0;"></i>
+            ${isExpanded?`<div onclick="event.stopPropagation();if(confirm('이 일정을 삭제할까요?')){const trip=getTrip(currentId);trip.events['${activeDayKey}']=(trip.events['${activeDayKey}']||[]).filter(r=>r.id!=='${r.id}');persist();renderAll();}" style="width:30px;height:30px;background:#FFF0F0;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;-webkit-tap-highlight-color:transparent;"><i class="ti ti-trash" style="font-size:14px;color:#E8513A;pointer-events:none;"></i></div>`:''}
           </div>
           ${isExpanded?`
           <!-- 세부내용 -->
-          <div style="border-top:0.5px solid var(--sand2);padding:14px;display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+          <div style="border-top:0.5px solid #F0EBE4;padding:14px;display:grid;grid-template-columns:1fr 1fr;gap:14px;background:#fff;">
             ${mobFld(r,'content','내용',esc(r.content))}
             ${mobFld(r,'cost','비용(₩)',r.cost?fmtCost(r.cost):'')}
             ${mobFld(r,'cat','카테고리',cat.emoji+' '+cat.label,'text',catOpts)}
