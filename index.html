@@ -1477,21 +1477,22 @@ function renderMobTable(){
 
     return `<tr data-rowid="${r.id}">
       <td colspan="9" style="padding:0;border-bottom:8px solid var(--sand);">
-        <div style="background:var(--white);border-radius:12px;overflow:hidden;border:${isExpanded?'1.5px solid #C85A2A':'0.5px solid var(--sand2)'};">
+        <div style="background:var(--white);border-radius:12px;overflow:hidden;border:${isExpanded?`1.5px solid rgba(${bgR},.5)`:'0.5px solid var(--sand2)'};">
           <!-- 카드 헤더 -->
-          <div class="mob-card-header" data-cardid="${r.id}" style="display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;-webkit-tap-highlight-color:transparent;">
-            <div style="width:34px;height:34px;border-radius:9px;background:rgba(${bgR},.12);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">${cat.emoji}</div>
+          <div class="mob-card-header" data-cardid="${r.id}" style="display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;-webkit-tap-highlight-color:transparent;background:${isExpanded?`rgba(${bgR},.85)`:'#1C1A14'};">
+            <div style="width:34px;height:34px;border-radius:9px;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">${cat.emoji}</div>
             <div style="flex:1;min-width:0;">
-              <div style="font-size:14px;font-weight:500;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(r.content)||'내용 없음'}</div>
+              <div style="font-size:14px;font-weight:500;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(r.content)||'내용 없음'}</div>
               <!-- 시간 클릭으로 수정 -->
-              <div class="mob-card-time" data-tc="${r.id}" data-dk="${activeDayKey}" 
-                style="font-size:12px;color:${st?'#C85A2A':'var(--ink3)'};margin-top:2px;display:inline-flex;align-items:center;gap:3px;cursor:pointer;-webkit-tap-highlight-color:transparent;"
+              <div class="mob-card-time" data-tc="${r.id}" data-dk="${activeDayKey}"
+                style="font-size:12px;color:rgba(255,255,255,.7);margin-top:2px;display:inline-flex;align-items:center;gap:3px;cursor:pointer;-webkit-tap-highlight-color:transparent;"
                 onclick="event.stopPropagation();openTimePopup('${r.id}','${activeDayKey}',this)">
                 <i class="ti ti-clock" style="font-size:11px;"></i> ${timeDisp}
               </div>
             </div>
-            <i class="ti ti-chevron-${isExpanded?'up':'down'}" style="font-size:16px;color:${isExpanded?'#C85A2A':'var(--ink3)'};flex-shrink:0;"></i>
-            ${isExpanded?`<div data-rdel="${r.id}" data-dk="${activeDayKey}" onclick="event.stopPropagation()" style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:8px;background:#FAECE7;flex-shrink:0;cursor:pointer;-webkit-tap-highlight-color:transparent;"><i class="ti ti-trash" style="font-size:15px;color:#C85A2A;pointer-events:none;"></i></div>`:''}
+            <i class="ti ti-chevron-${isExpanded?'up':'down'}" style="font-size:16px;color:rgba(255,255,255,.8);flex-shrink:0;"></i>
+            ${isExpanded?`<div data-rdel="${r.id}" data-dk="${activeDayKey}" style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:8px;background:rgba(255,255,255,.15);flex-shrink:0;cursor:pointer;-webkit-tap-highlight-color:transparent;"><i class="ti ti-trash" style="font-size:15px;color:#FF8A80;pointer-events:none;"></i></div>`:''}
+          </div>
           </div>
           ${isExpanded?`
           <!-- 세부내용 -->
@@ -2190,7 +2191,7 @@ document.addEventListener('click',function(e){
   /* 테이블 */
   const tc=t.closest('[data-tc]');if(tc){openTimePopup(tc.dataset.tc,tc.dataset.dk,tc);return;}
   const editCell=t.closest('.edit-cell');if(editCell){const row=editCell.closest('tr[data-rowid]');if(row)openEvtModal(row.dataset.dk,null,true,row.dataset.rowid);return;}
-  const rdel=t.closest('[data-rdel]');if(rdel){if(!confirm('삭제할까요?'))return;const trip=getTrip(currentId);trip.events[rdel.dataset.dk]=(trip.events[rdel.dataset.dk]||[]).filter(r=>r.id!==rdel.dataset.rdel);persist();renderAll();return;}
+  const rdel=t.closest('[data-rdel]');if(rdel){e.stopPropagation();if(!confirm('이 일정을 삭제할까요?'))return;const trip=getTrip(currentId);trip.events[rdel.dataset.dk]=(trip.events[rdel.dataset.dk]||[]).filter(r=>r.id!==rdel.dataset.rdel);persist();renderAll();return;}
 
   /* 일정 추가 버튼 */
   if(t.closest('#btnAddRow')||t.closest('#dBtnAddRow')){addRow();return;}
