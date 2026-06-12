@@ -923,8 +923,8 @@ table.sp td{overflow:hidden;}
         <div class="cat-grid">
           <button class="cat-btn" id="cat-eat"><span class="ck"><i class="ti ti-check"></i></span><i class="ti ti-tools-kitchen-2"></i><span>식사</span></button>
           <button class="cat-btn" id="cat-move"><span class="ck"><i class="ti ti-check"></i></span><i class="ti ti-car"></i><span>이동</span></button>
-          <button class="cat-btn" id="cat-see"><span class="ck"><i class="ti ti-check"></i></span><i class="ti ti-binoculars"></i><span>관광</span></button>
-          <button class="cat-btn" id="cat-rest"><span class="ck"><i class="ti ti-check"></i></span><i class="ti ti-bed"></i><span>숙박</span></button>
+          <button class="cat-btn" id="cat-see"><span class="ck"><i class="ti ti-check"></i></span><i class="ti ti-camera"></i><span>관광</span></button>
+          <button class="cat-btn" id="cat-rest"><span class="ck"><i class="ti ti-check"></i></span><i class="ti ti-moon"></i><span>숙박</span></button>
           <button class="cat-btn" id="cat-etc"><span class="ck"><i class="ti ti-check"></i></span><i class="ti ti-dots-circle-horizontal"></i><span>기타</span></button>
         </div>
       </div>
@@ -1370,48 +1370,59 @@ function mobSaveField(id,field,value,dk){
   renderSummary();
 }
 
-// 카드 인라인 체크리스트 렌더링
+// 카드 인라인 체크리스트 렌더링 (아코디언)
+let clExpandedId = null;
+function toggleClExpand(evId){ clExpandedId = clExpandedId===evId ? null : evId; renderMobTable(); }
+
 function mobCardChecklist(r){
   const cl=getChecklist();
   const items=cl[r.id]||[];
   const done=items.filter(i=>i.done).length;
   const suggs=getSuggestions(r);
+  const isOpen = clExpandedId === r.id;
+  const catBg = r.cat==='eat'?'#FDF0EA':r.cat==='move'?'#E4F2F7':r.cat==='see'?'#EEF4EE':r.cat==='rest'?'#FBF4E0':'#F2EFE8';
+  const catBorder = r.cat==='eat'?'#F0C4AC':r.cat==='move'?'#AAD4E4':r.cat==='see'?'#B8D4B8':r.cat==='rest'?'#E8D898':'#D8D4C4';
+  const catColor = r.cat==='eat'?'#C85A2A':r.cat==='move'?'#2A6B7C':r.cat==='see'?'#5A7A5A':r.cat==='rest'?'#C8A84B':'#6B6550';
 
-  let html=`<div style="border-top:0.5px solid var(--sand2);padding:12px 14px;">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-      <div style="display:flex;align-items:center;gap:6px;">
-        <i class="ti ti-checklist" style="font-size:14px;color:#C85A2A;"></i>
-        <span style="font-size:12px;font-weight:500;color:var(--ink2);">체크리스트</span>
-      </div>
-      ${items.length?`<span style="font-size:11px;color:#993C1D;background:#FAECE7;border-radius:999px;padding:2px 8px;">${done}/${items.length}</span>`:''}
-    </div>`;
+  let html=`<div onclick="event.stopPropagation();toggleClExpand('${r.id}')"
+    style="display:flex;align-items:center;justify-content:space-between;padding:11px 14px;cursor:pointer;border-top:0.5px solid var(--sand2);background:${isOpen?catBg:'var(--sand)'};${isOpen?`border-bottom:0.5px solid ${catBorder};`:''}-webkit-tap-highlight-color:transparent;">
+    <div style="display:flex;align-items:center;gap:6px;">
+      <i class="ti ti-checkbox" style="font-size:15px;color:${isOpen?catColor:'var(--ink3)'};"></i>
+      <span style="font-size:13px;font-weight:500;color:${isOpen?catColor:'var(--ink2)'};">체크리스트</span>
+      ${items.length?`<span style="font-size:11px;color:${catColor};background:rgba(255,255,255,.7);border:0.5px solid ${catBorder};border-radius:999px;padding:1px 8px;">${done}/${items.length}</span>`:''}
+    </div>
+    <i class="ti ti-chevron-${isOpen?'up':'down'}" style="font-size:13px;color:${isOpen?catColor:'var(--ink3)'};"></i>
+  </div>`;
 
-  if(items.length){
-    html+=items.map(item=>`
-      <div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:0.5px solid var(--sand2);">
-        <div onclick="mobClToggle('${r.id}','${item.id}')" style="width:22px;height:22px;border-radius:6px;${item.done?'background:#5A7A5A;':'border:1.5px solid var(--sand3);background:var(--white);'}display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;-webkit-tap-highlight-color:transparent;">
-          ${item.done?'<i class="ti ti-check" style="font-size:12px;color:#fff;pointer-events:none;"></i>':''}
-        </div>
-        <span style="flex:1;font-size:13px;color:var(--ink);${item.done?'text-decoration:line-through;color:var(--ink3);':''}">${esc(item.text)}</span>
-        <div onclick="mobClDel('${r.id}','${item.id}')" style="width:30px;height:30px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink3);-webkit-tap-highlight-color:transparent;">
-          <i class="ti ti-x" style="font-size:13px;pointer-events:none;"></i>
-        </div>
-      </div>`).join('');
-  } else if(suggs.length){
-    html+=`<div style="font-size:11px;color:var(--ink3);margin-bottom:6px;">추천 항목 탭해서 추가</div>`;
-    html+=suggs.map(s=>`
-      <div onclick="mobClAddSugg('${r.id}','${esc(s)}')" style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;-webkit-tap-highlight-color:transparent;">
-        <div style="width:22px;height:22px;border-radius:6px;border:1.5px solid #C85A2A;display:flex;align-items:center;justify-content:center;color:#C85A2A;font-size:14px;pointer-events:none;">+</div>
-        <span style="font-size:13px;color:var(--ink3);">${esc(s)}</span>
-      </div>`).join('');
+  if(isOpen){
+    html+=`<div style="background:var(--white);padding:10px 14px;">`;
+    if(items.length){
+      html+=items.map(item=>`
+        <div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:0.5px solid var(--sand2);">
+          <div onclick="event.stopPropagation();mobClToggle('${r.id}','${item.id}')" style="width:22px;height:22px;border-radius:6px;${item.done?`background:${catColor};`:'border:1.5px solid var(--sand3);background:var(--white);'}display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;-webkit-tap-highlight-color:transparent;">
+            ${item.done?'<i class="ti ti-check" style="font-size:12px;color:#fff;pointer-events:none;"></i>':''}
+          </div>
+          <span style="flex:1;font-size:13px;color:var(--ink);${item.done?'text-decoration:line-through;color:var(--ink3);':''}">${esc(item.text)}</span>
+          <div onclick="event.stopPropagation();mobClDel('${r.id}','${item.id}')" style="width:30px;height:30px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink3);-webkit-tap-highlight-color:transparent;">
+            <i class="ti ti-x" style="font-size:13px;pointer-events:none;"></i>
+          </div>
+        </div>`).join('');
+    } else if(suggs.length){
+      html+=`<div style="font-size:11px;color:var(--ink3);margin-bottom:6px;">추천 항목 탭해서 추가</div>`;
+      html+=suggs.map(s=>`
+        <div onclick="event.stopPropagation();mobClAddSugg('${r.id}','${esc(s)}')" style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;-webkit-tap-highlight-color:transparent;">
+          <div style="width:22px;height:22px;border-radius:6px;border:1.5px solid ${catColor};display:flex;align-items:center;justify-content:center;color:${catColor};font-size:14px;pointer-events:none;">+</div>
+          <span style="font-size:13px;color:var(--ink3);">${esc(s)}</span>
+        </div>`).join('');
+    }
+    html+=`<div style="display:flex;gap:8px;margin-top:8px;">
+      <input id="mobClInp_${r.id}" placeholder="할 일 추가..."
+        style="flex:1;font-family:'DM Sans',sans-serif;font-size:14px;border:0.5px solid var(--sand3);border-radius:9px;padding:8px 10px;background:var(--sand);color:var(--ink);outline:none;"
+        onkeydown="if(event.key==='Enter'){event.stopPropagation();mobClAdd('${r.id}')}"
+        onclick="event.stopPropagation()">
+      <button onclick="event.stopPropagation();mobClAdd('${r.id}')" style="font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;background:${catColor};color:#fff;border:none;border-radius:9px;padding:8px 14px;cursor:pointer;">추가</button>
+    </div></div>`;
   }
-
-  html+=`<div style="display:flex;gap:8px;margin-top:8px;">
-    <input id="mobClInp_${r.id}" placeholder="할 일 추가..." 
-      style="flex:1;font-family:'DM Sans',sans-serif;font-size:14px;border:0.5px solid var(--sand3);border-radius:9px;padding:8px 10px;background:var(--sand);color:var(--ink);outline:none;"
-      onkeydown="if(event.key==='Enter')mobClAdd('${r.id}')">
-    <button onclick="mobClAdd('${r.id}')" style="font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;background:#C85A2A;color:#fff;border:none;border-radius:9px;padding:8px 14px;cursor:pointer;">추가</button>
-  </div></div>`;
   return html;
 }
 
@@ -1480,6 +1491,7 @@ function renderMobTable(){
               </div>
             </div>
             <i class="ti ti-chevron-${isExpanded?'up':'down'}" style="font-size:16px;color:${isExpanded?'#C85A2A':'var(--ink3)'};flex-shrink:0;"></i>
+            ${isExpanded?`<div data-rdel="${r.id}" data-dk="${activeDayKey}" onclick="event.stopPropagation()" style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:8px;background:#FAECE7;flex-shrink:0;cursor:pointer;-webkit-tap-highlight-color:transparent;"><i class="ti ti-trash" style="font-size:15px;color:#C85A2A;pointer-events:none;"></i></div>`:''}
           </div>
           ${isExpanded?`
           <!-- 세부내용 -->
@@ -1498,12 +1510,8 @@ function renderMobTable(){
               }
             </div>
           </div>
-          <!-- 체크리스트 -->
+          <!-- 체크리스트 아코디언 -->
           ${mobCardChecklist(r)}
-          <!-- 하단 액션 -->
-          <div style="padding:8px 14px;border-top:0.5px solid var(--sand2);display:flex;justify-content:flex-end;background:var(--sand);">
-            <button class="row-del-btn" data-rdel="${r.id}" data-dk="${activeDayKey}" style="font-family:'DM Sans',sans-serif;font-size:12px;background:#FAECE7;border:0.5px solid #F0997B;border-radius:7px;padding:5px 12px;cursor:pointer;color:#993C1D;">삭제</button>
-          </div>
           `:''}
         </div>
       </td>
