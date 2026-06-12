@@ -128,7 +128,7 @@ table.sp tr:active td{background:var(--sand);}
 .tl-wrap-outer{flex:1;overflow-y:scroll;-webkit-overflow-scrolling:touch;touch-action:pan-y;overscroll-behavior:contain;}
 .tl-wrap{position:relative;min-height:100%;}
 .tl-grid{display:flex;flex-direction:column;position:relative;}
-.tl-grid::before{content:'';position:absolute;left:52px;top:0;bottom:0;width:2px;background:var(--sand2);z-index:0;}
+.tl-grid::before{content:'';position:absolute;left:62px;top:0;bottom:0;width:2px;background:var(--sand2);z-index:0;}
 .tl-row{display:flex;height:32px;align-items:center;}
 .tl-row.hr{}
 .tl-row.hf{}
@@ -138,7 +138,7 @@ table.sp tr:active td{background:var(--sand);}
 .tl-dot{width:9px;height:9px;border-radius:50%;border:2px solid #fff;flex-shrink:0;}.tl-cell{flex:1;cursor:pointer;touch-action:pan-y;min-height:32px;}
 .tl-cell:active{background:rgba(200,90,42,.06);}
 
-.tl-evts{position:absolute;top:0;left:68px;right:4px;pointer-events:none;touch-action:pan-y;}
+.tl-evts{position:absolute;top:0;left:72px;right:4px;pointer-events:none;touch-action:pan-y;}
 .evb{position:absolute;left:0;right:0;border-radius:8px;overflow:hidden;display:flex;flex-direction:column;cursor:pointer;pointer-events:all;transition:filter .12s;touch-action:pan-y;}
 .evb:active{filter:brightness(.93);}
 .evb-body{padding:5px 7px;flex:1;position:relative;}
@@ -654,8 +654,9 @@ table.sp td{overflow:hidden;}
     <!-- 타임라인 (모바일) -->
     <div class="tl-wrap-outer" id="mobPaneTl">
       <div class="tl-wrap" id="tlWrapMob" style="position:relative">
-        <div class="tl-grid" id="tlGridMob"></div>
-        <div class="tl-evts" id="tlEvtsMob"></div>
+        <div class="tl-grid" id="tlGridMob" style="position:relative;">
+          <div class="tl-evts" id="tlEvtsMob"></div>
+        </div>
       </div>
     </div>
     <!-- 체크리스트 (모바일) -->
@@ -703,8 +704,9 @@ table.sp td{overflow:hidden;}
           <div class="pane-label"><i class="ti ti-timeline" style="font-size:11px"></i> 타임라인</div>
           <div class="tbl-scroll" id="dTlScroll">
             <div class="tl-wrap" id="tlWrapDesk" style="position:relative">
-              <div class="tl-grid" id="tlGridDesk"></div>
-              <div class="tl-evts" id="tlEvtsDesk"></div>
+              <div class="tl-grid" id="tlGridDesk" style="position:relative;">
+                <div class="tl-evts" id="tlEvtsDesk"></div>
+              </div>
             </div>
           </div>
         </div>
@@ -1716,10 +1718,16 @@ function renderMobTimeline(){
     blks+=`<div class="evb evb-${ev.cat}" style="top:${top+1}px;height:${h-2}px;padding:${pad};overflow:hidden;${isSelected?'outline:2px solid #C85A2A;outline-offset:-2px;':''}" data-mobtlid="${ev.id}" data-mobtldk="${activeDayKey}">${body}</div>`;
   });
   const wrap=document.getElementById('tlWrapMob');
-  document.getElementById('tlGridMob').innerHTML=grid;
-  document.getElementById('tlEvtsMob').innerHTML=blks;
-  wrap.style.height=(total*ROW_H)+'px';
-  document.getElementById('tlEvtsMob').style.height=(total*ROW_H)+'px';
+  const gridEl=document.getElementById('tlGridMob');
+  const evtsEl=document.getElementById('tlEvtsMob');
+  // grid 행 삽입 (evts는 grid 안에 있으므로 보존)
+  evtsEl.remove();
+  gridEl.innerHTML=grid;
+  gridEl.appendChild(evtsEl);
+  evtsEl.innerHTML=blks;
+  const totalH=(total*ROW_H)+'px';
+  wrap.style.height=totalH;
+  gridEl.style.minHeight=totalH;
 }
 
 /* ── 모바일 체크리스트 ── */
@@ -1863,7 +1871,15 @@ function renderDeskTimeline(){
   });
   ['Desk'].forEach(s=>{
     const g=document.getElementById('tlGrid'+s),e2=document.getElementById('tlEvts'+s),w=document.getElementById('tlWrap'+s);
-    if(g){g.innerHTML=grid;e2.innerHTML=blks;w.style.height=(total*ROW_H)+'px';e2.style.height=(total*ROW_H)+'px';}
+    if(g){
+      const e2=document.getElementById('tlEvtsDesk');
+      e2.remove();
+      g.innerHTML=grid;
+      g.appendChild(e2);
+      e2.innerHTML=blks;
+      w.style.height=(total*ROW_H)+'px';
+      g.style.minHeight=(total*ROW_H)+'px';
+    }
   });
 }
 
