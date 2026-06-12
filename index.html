@@ -975,6 +975,11 @@ table.sp td{overflow:hidden;}
 <script>
 /* ── 상수 ── */
 const ROW_H=32;
+function getActualROW_H(){
+  const rows=document.querySelectorAll('.tl-row');
+  if(rows.length>1) return rows[0].getBoundingClientRect().height||ROW_H;
+  return ROW_H;
+}
 const TIMES=[];for(let h=0;h<24;h++){TIMES.push(String(h).padStart(2,'0')+':00');TIMES.push(String(h).padStart(2,'0')+':30');}
 const CATS={
   eat:{label:'식사',icon:'ti-tools-kitchen-2',emoji:'🍽'},
@@ -1662,11 +1667,24 @@ function renderMobTimeline(){
   const CAT_DOT={'eat':'#C85A2A','move':'#2A6B7C','see':'#5A7A5A','rest':'#C8A84B','etc':'#6B6550'};
   const evtStarts={};evts.forEach(ev=>{const st=ev.startTime||ev.time||'00:00';if(!evtStarts[st])evtStarts[st]=ev.cat;});
   TIMES.forEach(t=>{const isH=t.endsWith(':00');const evCat=evtStarts[t];const dotHtml=evCat?`<div class="tl-dot" style="background:${CAT_DOT[evCat]||'#6B6550'};"></div>`:'<div style="width:9px;height:9px;"></div>';grid+=`<div class="tl-row ${isH?'hr':'hf'}"><div class="tl-lbl ${isH?'':'dim'}">${isH?t:''}</div><div class="tl-dot-wrap">${dotHtml}</div><div class="tl-cell" data-tltime="${t}" data-tldk="${activeDayKey}"></div></div>`;});
+
+  // 먼저 그리드 삽입 후 실제 행 높이 측정
+  const wrap=document.getElementById('tlWrapMob');
+  const gridEl=document.getElementById('tlGridMob');
+  const evtsEl=document.getElementById('tlEvtsMob');
+  evtsEl.remove();
+  gridEl.innerHTML=grid;
+  gridEl.appendChild(evtsEl);
+
+  // 실제 렌더링된 행 높이 측정
+  const firstRow=gridEl.querySelector('.tl-row');
+  const RH=firstRow?firstRow.getBoundingClientRect().height:ROW_H;
+
   let blks='';
   evts.forEach(ev=>{
     const cat=CATS[ev.cat]||CATS.etc;
     const st=ev.startTime||ev.time||'00:00',et=ev.endTime||'';
-    const si=t2i(st),ei=et?t2i(et):si+1,dur=Math.max(ei-si,1),top=si*ROW_H,h=dur*ROW_H;
+    const si=t2i(st),ei=et?t2i(et):si+1,dur=Math.max(ei-si,1),top=si*RH,h=dur*RH;
     const isSelected=window._tlChecklistEvtId===ev.id;
 
     const pad=h<32?'3px 6px':'7px 10px';
@@ -1725,7 +1743,7 @@ function renderMobTimeline(){
   gridEl.innerHTML=grid;
   gridEl.appendChild(evtsEl);
   evtsEl.innerHTML=blks;
-  const totalH=(total*ROW_H)+'px';
+  const totalH=(total*RH)+'px';
   wrap.style.height=totalH;
   gridEl.style.minHeight=totalH;
 }
