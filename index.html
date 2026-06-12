@@ -1735,13 +1735,6 @@ function renderMobTimeline(){
 
     blks+=`<div class="evb evb-${ev.cat}" style="top:${top}px;height:${h-1}px;padding:${pad};overflow:hidden;${isSelected?'outline:2px solid #C85A2A;outline-offset:-2px;':''}" data-mobtlid="${ev.id}" data-mobtldk="${activeDayKey}">${body}</div>`;
   });
-  const wrap=document.getElementById('tlWrapMob');
-  const gridEl=document.getElementById('tlGridMob');
-  const evtsEl=document.getElementById('tlEvtsMob');
-  // grid 행 삽입 (evts는 grid 안에 있으므로 보존)
-  evtsEl.remove();
-  gridEl.innerHTML=grid;
-  gridEl.appendChild(evtsEl);
   evtsEl.innerHTML=blks;
   const totalH=(total*RH)+'px';
   wrap.style.height=totalH;
