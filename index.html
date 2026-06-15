@@ -937,7 +937,7 @@ table.sp td{overflow:hidden;}
       <div class="gl-two-col">
         <div class="gl-field"><label>비용 (₩)</label><input type="number" id="evtCost" placeholder="0" min="0" inputmode="numeric"></div>
         <div class="gl-field"><label>이동수단</label>
-          <select id="evtTransport"><option>—</option><option>도보</option><option>버스</option><option>지하철</option><option>택시/우버</option><option>렌터카</option><option>기차</option><option>비행기</option><option>배/선박</option></select>
+          <select id="evtTransport"><option>—</option><option>도보</option><option>버스</option><option>지하철</option><option>택시/우버</option><option>자차</option><option>렌터카</option><option>기차</option><option>비행기</option><option>배/선박</option></select>
         </div>
       </div>
       <div class="gl-field"><label>비고</label><input type="text" id="evtNote" placeholder="예약 번호, 주의사항 등"></div>
@@ -1468,7 +1468,7 @@ function renderMobTable(){
   const transportOpts=[
     {val:'—',label:'—'},{val:'도보',label:'도보'},{val:'버스',label:'버스'},
     {val:'지하철',label:'지하철'},{val:'택시/우버',label:'택시/우버'},{val:'렌터카',label:'렌터카'},
-    {val:'기차',label:'기차'},{val:'비행기',label:'비행기'},{val:'배/선박',label:'배/선박'}
+    {val:'기차',label:'기차'},{val:'비행기',label:'비행기'},{val:'배/선박',label:'배/선박'},{val:'자차',label:'자차'}
   ];
 
   document.getElementById('tblBody').innerHTML=evts.map(r=>{
@@ -1840,7 +1840,7 @@ function renderDeskTable(){
   const trip=getTrip(currentId),evts=trip.events[activeDayKey]||[];
   let total=0;
   const catOpts=[{val:'eat',label:'🍽 식사'},{val:'move',label:'🚗 이동'},{val:'see',label:'🔭 관광'},{val:'rest',label:'🛏 숙박'},{val:'etc',label:'• 기타'}];
-  const transportOpts=['—','도보','버스','지하철','택시/우버','렌터카','기차','비행기','배/선박'];
+  const transportOpts=['—','도보','버스','지하철','택시/우버','자차','렌터카','기차','비행기','배/선박'];
   document.getElementById('dTblBody').innerHTML=evts.map(r=>{
     total+=Number(r.cost)||0;
     const cat=CATS[r.cat]||CATS.etc,st=r.startTime||r.time||'',et=r.endTime||'';
