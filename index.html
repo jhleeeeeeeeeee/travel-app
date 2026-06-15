@@ -1732,7 +1732,7 @@ function renderMobTimeline(){
       body+=`<div style="font-size:10px;color:${tagColor};opacity:.85;">${st}${et?'–'+et:''}</div>`;
     }
 
-    blks+=`<div class="evb evb-${ev.cat}" style="top:${top+1}px;height:${h}px;padding:${pad};overflow:hidden;${isSelected?'outline:2px solid #C85A2A;outline-offset:-2px;':''}" data-mobtlid="${ev.id}" data-mobtldk="${activeDayKey}">${body}</div>`;
+    blks+=`<div class="evb evb-${ev.cat}" style="top:${top+2}px;height:${h}px;padding:${pad};overflow:hidden;${isSelected?'outline:2px solid #C85A2A;outline-offset:-2px;':''}" data-mobtlid="${ev.id}" data-mobtldk="${activeDayKey}">${body}</div>`;
   });
   evtsEl.innerHTML=blks;
   wrap.style.height=totalH+'px';
@@ -1872,7 +1872,7 @@ function renderDeskTimeline(){
   evts.forEach(ev=>{
     const st=ev.startTime||ev.time||'00:00',et=ev.endTime||'';
     const si=t2i(st),ei=et?t2i(et):si+1,dur=Math.max(ei-si,1),top=si*RH2,h=dur*RH2;
-    blks+=`<div class="evb evb-${ev.cat}${dClEvtId===ev.id?' evb-selected':''}" style="top:${top+1}px;height:${h}px" data-desktlid="${ev.id}" data-desktldk="${activeDayKey}">
+    blks+=`<div class="evb evb-${ev.cat}${dClEvtId===ev.id?' evb-selected':''}" style="top:${top+2}px;height:${h}px" data-desktlid="${ev.id}" data-desktldk="${activeDayKey}">
       <div class="evb-body">
         <button class="evb-del" data-evbdel="${ev.id}" data-evbdk="${activeDayKey}"><i class="ti ti-x"></i></button>
         <button class="evb-edit-btn" data-evbedit="${ev.id}" data-evbeditdk="${activeDayKey}">수정</button>
