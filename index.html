@@ -1530,16 +1530,14 @@ function renderMobTable(){
             ${mobFld(r,'note','비고',r.note||'')}
             <div style="grid-column:1/-1;">
               <div style="font-size:11px;color:var(--ink3);margin-bottom:3px;letter-spacing:.04em;">위치</div>
-              <div style="display:flex;align-items:center;gap:8px;">
-                <div style="flex:1;font-size:13px;color:var(--ink);">${locHtml||'—'}</div>
-                <button onclick="event.stopPropagation();event.preventDefault();mobEditLocation('${r.id}','${activeDayKey}');" style="font-size:11px;color:var(--terra);border:0.5px solid var(--terra);border-radius:6px;padding:3px 8px;cursor:pointer;white-space:nowrap;-webkit-tap-highlight-color:transparent;flex-shrink:0;background:transparent;font-family:'DM Sans',sans-serif;">위치 수정</button>
-              </div>
+              <div style="font-size:13px;color:var(--ink);">${locHtml||'—'}</div>
             </div>
           </div>
           <!-- 체크리스트 아코디언 -->
           ${mobCardChecklist(r)}
           `:''}
         </div>
+      ${isExpanded?`<div style="display:flex;justify-content:flex-end;padding:2px 0 6px;"><span data-locevt="${r.id}" data-locdk="${activeDayKey}" style="font-size:11px;color:var(--terra);border:0.5px solid var(--terra);border-radius:6px;padding:3px 10px;cursor:pointer;">📍 위치 수정</span></div>`:''}
       </td>
     </tr>`;
   }).join('');
@@ -2147,12 +2145,9 @@ document.addEventListener('click',function(e){
   // 모바일 카드 헤더 탭
   // button 태그 onclick은 브라우저가 직접 처리 — 전역 핸들러 개입 안함
   if(e.target.tagName==='BUTTON'&&e.target.onclick) return;
-  // 위치 수정 버튼 (mob-card-header 클릭보다 먼저 처리)
-  if(t.closest('.mob-loc-edit')){
-    const el=t.closest('.mob-loc-edit');
-    mobEditLocation(el.dataset.evtid, el.dataset.dk);
-    return;
-  }
+  // 위치 수정 버튼
+  const locEvt=t.closest('[data-locevt]');
+  if(locEvt){mobEditLocation(locEvt.dataset.locevt, locEvt.dataset.locdk);return;}
   const mobCardHd=t.closest('.mob-card-header');
   if(mobCardHd){
     const cid=mobCardHd.dataset.cardid;
