@@ -995,13 +995,13 @@ table.sp td{overflow:hidden;}
 
 <script>
 /* ── 상수 ── */
-const ROW_H=30;
+const ROW_H=5;
 function getActualROW_H(){
   const rows=document.querySelectorAll('.tl-row');
   if(rows.length>1) return rows[0].getBoundingClientRect().height||ROW_H;
   return ROW_H;
 }
-const TIMES=[];for(let h=0;h<24;h++){TIMES.push(String(h).padStart(2,'0')+':00');TIMES.push(String(h).padStart(2,'0')+':30');}
+const TIMES=[];for(let h=0;h<24;h++){for(let m=0;m<60;m+=5){TIMES.push(String(h).padStart(2,'0')+':'+String(m).padStart(2,'0'));}}
 const CATS={
   eat:{label:'식사',icon:'ti-tools-kitchen-2',emoji:'🍽'},
   move:{label:'이동',icon:'ti-car',emoji:'🚗'},
@@ -1012,7 +1012,7 @@ const CATS={
 const INFO_CATS={visa:{label:'비자',bg:'rgba(200,90,42,.18)',fg:'#7A2C12'},currency:{label:'환율/화폐',bg:'rgba(42,107,124,.18)',fg:'#1A4A54'},lang:{label:'언어/소통',bg:'rgba(90,122,90,.18)',fg:'#2A4A2A'},emergency:{label:'긴급연락',bg:'rgba(180,50,50,.18)',fg:'#6A1010'},plug:{label:'플러그',bg:'rgba(200,168,75,.18)',fg:'#6B5010'},transport:{label:'교통',bg:'rgba(80,100,180,.18)',fg:'#303880'},tip:{label:'팁/매너',bg:'rgba(180,160,50,.18)',fg:'#7A6010'},safety:{label:'치안',bg:'rgba(60,140,80,.18)',fg:'#1E5E2E'},food:{label:'음식/식당',bg:'rgba(180,90,150,.18)',fg:'#7A1E5A'},weather:{label:'날씨',bg:'rgba(80,140,180,.18)',fg:'#1A4A6A'},wifi:{label:'인터넷/유심',bg:'rgba(100,80,180,.18)',fg:'#3A2A7A'},etc:{label:'기타',bg:'rgba(107,101,80,.18)',fg:'#3D3A2E'}};
 
 /* ── 유틸 ── */
-function t2i(t){const[h,m]=(t||'00:00').split(':').map(Number);return h*2+(m>=30?1:0);}
+function t2i(t){const[h,m]=(t||'00:00').split(':').map(Number);return h*12+Math.floor(m/5);}
 function toDateStr(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
 function dKR(ds){const d=new Date(ds+'T00:00:00');return `${d.getMonth()+1}/${d.getDate()}(${'일월화수목금토'[d.getDay()]})`;}
 function fmtRange(s,e){const f=d=>new Date(d+'T00:00:00').toLocaleDateString('ko-KR',{month:'short',day:'numeric'});return f(s)+' – '+f(e);}
@@ -1689,7 +1689,15 @@ function renderMobTimeline(){
   const evtStarts={};evts.forEach(ev=>{const st=ev.startTime||ev.time||'00:00';if(!evtStarts[st])evtStarts[st]=ev.cat;});
   const RH=ROW_H;
   const totalH=total*RH;
-  TIMES.forEach((t,idx)=>{const isH=t.endsWith(':00');const evCat=evtStarts[t];const dotHtml=evCat?`<div class="tl-dot" style="background:${CAT_DOT[evCat]||'#6B6550'};"></div>`:'';const top=idx*RH;grid+=`<div class="tl-row ${isH?'hr':'hf'}" style="position:absolute;top:${top}px;left:0;right:0;height:${RH}px;"><div class="tl-lbl ${isH?'':'dim'}">${isH?t:''}</div><div class="tl-dot-wrap">${dotHtml}</div><div class="tl-cell" data-tltime="${t}" data-tldk="${activeDayKey}"></div></div>`;});
+  TIMES.forEach((t,idx)=>{
+    const isHour=t.endsWith(':00');
+    const isHalf=t.endsWith(':30');
+    const evCat=evtStarts[t];
+    const dotHtml=evCat?`<div class="tl-dot" style="background:${CAT_DOT[evCat]||'#6B6550'};"></div>`:'';
+    const top=idx*RH;
+    const borderStyle=isHour?`border-top:1px solid var(--sand2)`:isHalf?`border-top:0.5px solid var(--sand2)`:``;
+    grid+=`<div class="tl-row" style="position:absolute;top:${top}px;left:0;right:0;height:${RH}px;${borderStyle}"><div class="tl-lbl ${isHour?'':'dim'}">${isHour?t:''}</div><div class="tl-dot-wrap">${dotHtml}</div><div class="tl-cell" data-tltime="${t}" data-tldk="${activeDayKey}"></div></div>`;
+  });
 
   const wrap=document.getElementById('tlWrapMob');
   const gridEl=document.getElementById('tlGridMob');
@@ -1888,7 +1896,15 @@ function renderDeskTimeline(){
   const evtStarts={};evts.forEach(ev=>{const st=ev.startTime||ev.time||'00:00';if(!evtStarts[st])evtStarts[st]=ev.cat;});
   const RH2=ROW_H;
   const totalH2=total*RH2;
-  TIMES.forEach((t,idx)=>{const isH=t.endsWith(':00');const evCat=evtStarts[t];const dotHtml=evCat?`<div class="tl-dot" style="background:${CAT_DOT[evCat]||'#6B6550'};"></div>`:'';const top=idx*RH2;grid+=`<div class="tl-row ${isH?'hr':'hf'}" style="position:absolute;top:${top}px;left:0;right:0;height:${RH2}px;"><div class="tl-lbl ${isH?'':'dim'}">${isH?t:''}</div><div class="tl-dot-wrap">${dotHtml}</div><div class="tl-cell" data-tltime="${t}" data-tldk="${activeDayKey}"></div></div>`;});
+  TIMES.forEach((t,idx)=>{
+    const isHour=t.endsWith(':00');
+    const isHalf=t.endsWith(':30');
+    const evCat=evtStarts[t];
+    const dotHtml=evCat?`<div class="tl-dot" style="background:${CAT_DOT[evCat]||'#6B6550'};"></div>`:'';
+    const top=idx*RH2;
+    const borderStyle=isHour?`border-top:1px solid var(--sand2)`:isHalf?`border-top:0.5px solid var(--sand2)`:``;
+    grid+=`<div class="tl-row" style="position:absolute;top:${top}px;left:0;right:0;height:${RH2}px;${borderStyle}"><div class="tl-lbl ${isHour?'':'dim'}">${isHour?t:''}</div><div class="tl-dot-wrap">${dotHtml}</div><div class="tl-cell" data-tltime="${t}" data-tldk="${activeDayKey}"></div></div>`;
+  });
   let blks='';
   evts.forEach(ev=>{
     const st=ev.startTime||ev.time||'00:00',et=ev.endTime||'';
