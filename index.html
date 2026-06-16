@@ -972,7 +972,13 @@ table.sp td{overflow:hidden;}
   </div>
 </div>
 
-<!-- 위치 수정 바텀시트 -->
+<!-- 카테고리 수정 바텀시트 -->
+<div id="catSheetOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:8200;" onclick="closeCatSheet()"></div>
+<div id="catSheet" style="display:none;position:fixed;bottom:0;left:0;right:0;background:var(--white);border-radius:16px 16px 0 0;padding:16px;z-index:8201;">
+  <div style="font-size:14px;font-weight:500;color:var(--ink);margin-bottom:14px;">카테고리 변경</div>
+  <div id="catSheetGrid" style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:14px;"></div>
+  <button onclick="closeCatSheet()" style="width:100%;padding:10px;border-radius:10px;border:none;background:var(--sand2);font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink3);cursor:pointer;">취소</button>
+</div>
 <div id="locSheetOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:8100;" onclick="closeLocSheet()"></div>
 <div id="locSheet" style="display:none;position:fixed;bottom:0;left:0;right:0;background:var(--white);border-radius:16px 16px 0 0;padding:16px;z-index:8101;max-height:80vh;overflow-y:auto;">
   <div style="font-size:14px;font-weight:500;color:var(--ink);margin-bottom:14px;">위치 수정</div>
@@ -1524,7 +1530,7 @@ function renderMobTable(){
         <div style="background:#fff;border-radius:14px;overflow:hidden;border:none;box-shadow:0 2px 8px rgba(0,0,0,.08);">
           <!-- 카드 헤더 C스타일 -->
           <div class="mob-card-header" data-cardid="${r.id}" style="display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;-webkit-tap-highlight-color:transparent;background:#fff;">
-            <div style="width:38px;height:38px;border-radius:12px;background:${catIconBg};display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">${cat.emoji}</div>
+            <div data-catevt="${r.id}" data-catdk="${activeDayKey}" style="width:38px;height:38px;border-radius:12px;background:${catIconBg};display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;cursor:pointer;-webkit-tap-highlight-color:transparent;">${cat.emoji}</div>
             <div style="flex:1;min-width:0;">
               <div style="font-size:14px;font-weight:500;color:#1A1A2E;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(r.content)||'내용 없음'}</div>
               <div style="display:flex;align-items:center;gap:6px;margin-top:4px;">
@@ -2183,6 +2189,9 @@ document.addEventListener('click',function(e){
   // 모바일 카드 헤더 탭
   // a 태그는 브라우저가 직접 처리
   if(e.target.tagName==='A') return;
+  // 카테고리 아이콘 클릭
+  const catEvt=t.closest('[data-catevt]');
+  if(catEvt){e.stopPropagation();openCatSheet(catEvt.dataset.catevt,catEvt.dataset.catdk);return;}
   // button 태그 onclick은 브라우저가 직접 처리 — 전역 핸들러 개입 안함
   if(e.target.tagName==='BUTTON'&&e.target.onclick) return;
   // 위치 수정 버튼
@@ -2404,6 +2413,35 @@ function saveEditTrip(){
   persist();closeModal('editTripModal');renderArchive();
 }
 let _ntSelectedCity='';
+// 카테고리 수정 바텀시트
+let _catSheetEvtId=null,_catSheetDk=null;
+function openCatSheet(evtId,dk){
+  if(window._readOnly)return;
+  _catSheetEvtId=evtId;_catSheetDk=dk;
+  const trip=getTrip(currentId);
+  const ev=(trip.events[dk]||[]).find(r=>r.id===evtId);
+  const cur=ev?ev.cat:'etc';
+  document.getElementById('catSheetGrid').innerHTML=Object.entries(CATS).map(([key,c])=>`
+    <div onclick="selectCatSheet('${key}')" style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 6px;border-radius:12px;background:${key===cur?c.bg:'var(--sand)'};border:${key===cur?`1.5px solid ${c.border}`:'1px solid var(--sand2)'};cursor:pointer;-webkit-tap-highlight-color:transparent;">
+      <span style="font-size:22px;">${c.emoji}</span>
+      <span style="font-size:11px;font-weight:500;color:${key===cur?c.color:'var(--ink3)'};">${c.label}</span>
+    </div>`).join('');
+  document.getElementById('catSheetOverlay').style.display='block';
+  document.getElementById('catSheet').style.display='block';
+}
+function selectCatSheet(cat){
+  if(!_catSheetEvtId||!_catSheetDk)return;
+  const trip=getTrip(currentId);
+  const ev=(trip.events[_catSheetDk]||[]).find(r=>r.id===_catSheetEvtId);
+  if(ev){ev.cat=cat;persist();renderAll();}
+  closeCatSheet();
+}
+function closeCatSheet(){
+  document.getElementById('catSheetOverlay').style.display='none';
+  document.getElementById('catSheet').style.display='none';
+  _catSheetEvtId=null;_catSheetDk=null;
+}
+
 let _locSheetEvtId=null,_locSheetDk=null;
 
 function locSearchGoogle(){
