@@ -1529,7 +1529,10 @@ function renderMobTable(){
             ${mobFld(r,'region','소재지',r.region||'')}
             ${mobFld(r,'note','비고',r.note||'')}
             <div style="grid-column:1/-1;">
-              <div style="font-size:11px;color:var(--ink3);margin-bottom:3px;letter-spacing:.04em;">위치</div>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;">
+                <div style="font-size:11px;color:var(--ink3);letter-spacing:.04em;">위치</div>
+                <span data-locevt="${r.id}" data-locdk="${activeDayKey}" style="font-size:10px;color:var(--terra);cursor:pointer;text-decoration:underline;">수정</span>
+              </div>
               <div style="font-size:13px;color:var(--ink);">${locHtml||'—'}</div>
             </div>
           </div>
@@ -1537,7 +1540,6 @@ function renderMobTable(){
           ${mobCardChecklist(r)}
           `:''}
         </div>
-      ${isExpanded?`<div style="display:flex;justify-content:flex-end;padding:2px 0 6px;"><span data-locevt="${r.id}" data-locdk="${activeDayKey}" style="font-size:11px;color:var(--terra);border:0.5px solid var(--terra);border-radius:6px;padding:3px 10px;cursor:pointer;">📍 위치 수정</span></div>`:''}
       </td>
     </tr>`;
   }).join('');
