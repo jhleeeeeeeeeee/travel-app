@@ -1516,7 +1516,7 @@ function renderMobTable(){
             <div style="grid-column:1/-1;">
               <div style="font-size:11px;color:var(--ink3);margin-bottom:3px;letter-spacing:.04em;">위치</div>
               ${r.location&&!isMapUrl(r.location)?
-                mobFld(r,'location','위치',r.location||''):
+                `<div onclick="mobStartEdit('${r.id}','location')" style="cursor:pointer;font-size:13px;color:var(--ink);border-bottom:1px dashed var(--sand3);padding-bottom:2px;">${esc(r.location)}</div>`:
                 `<div onclick="mobStartEdit('${r.id}','location')" style="cursor:pointer;font-size:13px;color:var(--ink);border-bottom:1px dashed var(--sand3);padding-bottom:2px;">${locHtml}</div>`
               }
             </div>
