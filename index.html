@@ -926,7 +926,7 @@ table.sp td{overflow:hidden;}
           <button class="cat-btn" id="cat-move"><span class="ck"><i class="ti ti-check"></i></span><i class="ti ti-car"></i><span>이동</span></button>
           <button class="cat-btn" id="cat-see"><span class="ck"><i class="ti ti-check"></i></span><i class="ti ti-camera"></i><span>관광</span></button>
           <button class="cat-btn" id="cat-rest"><span class="ck"><i class="ti ti-check"></i></span><i class="ti ti-moon"></i><span>숙박</span></button>
-          <button class="cat-btn" id="cat-etc"><span class="ck"><i class="ti ti-check"></i></span><i class="ti ti-dots-circle-horizontal"></i><span>기타</span></button>
+          <button class="cat-btn" id="cat-etc"><span class="ck"><i class="ti ti-check"></i></span><i class="ti ti-target"></i><span>기타</span></button>
         </div>
       </div>
       <div class="gl-two-col">
@@ -1003,11 +1003,11 @@ function getActualROW_H(){
 }
 const TIMES=[];for(let h=0;h<24;h++){for(let m=0;m<60;m+=5){TIMES.push(String(h).padStart(2,'0')+':'+String(m).padStart(2,'0'));}}
 const CATS={
-  eat:{label:'식사',icon:'ti-tools-kitchen-2',emoji:'🍽'},
-  move:{label:'이동',icon:'ti-car',emoji:'🚗'},
-  see:{label:'관광',icon:'ti-binoculars',emoji:'🔭'},
-  rest:{label:'숙박',icon:'ti-bed',emoji:'🛏'},
-  etc:{label:'기타',icon:'ti-dots-circle-horizontal',emoji:'•'}
+  eat:{label:'식사',icon:'ti-tools-kitchen-2',emoji:'🍽',color:'#C85A2A',bg:'#FDF0EA',bgLight:'#FEF5F0',border:'#F0C4AC'},
+  move:{label:'이동',icon:'ti-car',emoji:'🚗',color:'#2A6B7C',bg:'#E4F2F7',bgLight:'#EAF5F8',border:'#AAD4E4'},
+  see:{label:'관광',icon:'ti-camera',emoji:'📷',color:'#5A7A5A',bg:'#EEF4EE',bgLight:'#F3F8F3',border:'#B8D4B8'},
+  rest:{label:'숙박',icon:'ti-moon',emoji:'🛏',color:'#C8A84B',bg:'#FBF4E0',bgLight:'#FEF9EC',border:'#E8D898'},
+  etc:{label:'기타',icon:'ti-target',emoji:'🎯',color:'#6B4FA0',bg:'#F0EDF8',bgLight:'#F6F3FC',border:'#C8B8E8'}
 };
 const INFO_CATS={visa:{label:'비자',bg:'rgba(200,90,42,.18)',fg:'#7A2C12'},currency:{label:'환율/화폐',bg:'rgba(42,107,124,.18)',fg:'#1A4A54'},lang:{label:'언어/소통',bg:'rgba(90,122,90,.18)',fg:'#2A4A2A'},emergency:{label:'긴급연락',bg:'rgba(180,50,50,.18)',fg:'#6A1010'},plug:{label:'플러그',bg:'rgba(200,168,75,.18)',fg:'#6B5010'},transport:{label:'교통',bg:'rgba(80,100,180,.18)',fg:'#303880'},tip:{label:'팁/매너',bg:'rgba(180,160,50,.18)',fg:'#7A6010'},safety:{label:'치안',bg:'rgba(60,140,80,.18)',fg:'#1E5E2E'},food:{label:'음식/식당',bg:'rgba(180,90,150,.18)',fg:'#7A1E5A'},weather:{label:'날씨',bg:'rgba(80,140,180,.18)',fg:'#1A4A6A'},wifi:{label:'인터넷/유심',bg:'rgba(100,80,180,.18)',fg:'#3A2A7A'},etc:{label:'기타',bg:'rgba(107,101,80,.18)',fg:'#3D3A2E'}};
 
@@ -1407,9 +1407,10 @@ function mobCardChecklist(r){
   const done=items.filter(i=>i.done).length;
   const suggs=getSuggestions(r);
   const isOpen = clExpandedId === r.id;
-  const catBg = r.cat==='eat'?'#FDF0EA':r.cat==='move'?'#E4F2F7':r.cat==='see'?'#EEF4EE':r.cat==='rest'?'#FBF4E0':'#F2EFE8';
-  const catBorder = r.cat==='eat'?'#F0C4AC':r.cat==='move'?'#AAD4E4':r.cat==='see'?'#B8D4B8':r.cat==='rest'?'#E8D898':'#D8D4C4';
-  const catColor = r.cat==='eat'?'#C85A2A':r.cat==='move'?'#2A6B7C':r.cat==='see'?'#5A7A5A':r.cat==='rest'?'#C8A84B':'#6B6550';
+  const catBg = (CATS[r.cat]||CATS.etc).bg;
+  const catBorder = (CATS[r.cat]||CATS.etc).border;
+  const catColor = (CATS[r.cat]||CATS.etc).color;
+  const catBgLight = (CATS[r.cat]||CATS.etc).bgLight;
 
   let html=`<div onclick="event.stopPropagation();toggleClExpand('${r.id}')"
     style="display:flex;align-items:center;justify-content:space-between;padding:11px 14px;cursor:pointer;border-top:0.5px solid var(--sand2);background:${isOpen?catBg:'var(--sand)'};${isOpen?`border-bottom:0.5px solid ${catBorder};`:''}-webkit-tap-highlight-color:transparent;">
@@ -1422,11 +1423,11 @@ function mobCardChecklist(r){
   </div>`;
 
   if(isOpen){
-    html+=`<div style="background:var(--white);padding:10px 14px;">`;
+    html+=`<div style="background:${catBgLight};padding:10px 14px;">`;
     if(items.length){
       html+=items.map(item=>`
         <div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:0.5px solid var(--sand2);">
-          <div onclick="event.stopPropagation();mobClToggle('${r.id}','${item.id}')" style="width:22px;height:22px;border-radius:6px;${item.done?`background:${catColor};`:'border:1.5px solid var(--sand3);background:var(--white);'}display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;-webkit-tap-highlight-color:transparent;">
+          <div onclick="event.stopPropagation();mobClToggle('${r.id}','${item.id}')" style="width:22px;height:22px;border-radius:6px;${item.done?`background:${catColor};`:`border:1.5px solid ${catBorder};background:#fff;`}display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;-webkit-tap-highlight-color:transparent;">
             ${item.done?'<i class="ti ti-check" style="font-size:12px;color:#fff;pointer-events:none;"></i>':''}
           </div>
           <input
@@ -1448,7 +1449,7 @@ function mobCardChecklist(r){
     }
     html+=`<div style="display:flex;gap:8px;margin-top:8px;">
       <input id="mobClInp_${r.id}" placeholder="할 일 추가..."
-        style="flex:1;font-family:'DM Sans',sans-serif;font-size:14px;border:0.5px solid var(--sand3);border-radius:9px;padding:8px 10px;background:var(--sand);color:var(--ink);outline:none;"
+        style="flex:1;font-family:'DM Sans',sans-serif;font-size:14px;border:0.5px solid ${catBorder};border-radius:9px;padding:8px 10px;background:#fff;color:var(--ink);outline:none;"
         onkeydown="if(event.key==='Enter'){event.stopPropagation();mobClAdd('${r.id}')}"
         onclick="event.stopPropagation()">
       <button onclick="event.stopPropagation();mobClAdd('${r.id}')" style="font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;background:${catColor};color:#fff;border:none;border-radius:9px;padding:8px 14px;cursor:pointer;">추가</button>
@@ -1510,10 +1511,10 @@ function renderMobTable(){
     const st=r.startTime||r.time||'',et=r.endTime||'';
     const timeDisp=st?(et?st+'–'+et:st):'시간 미설정';
     const isExpanded=expandedId===r.id;
-    const catColor=r.cat==='eat'?'#E8513A':r.cat==='move'?'#3A8FC8':r.cat==='see'?'#3ABFB0':r.cat==='rest'?'#F0A500':'#888888';
-    const catBadgeBg=r.cat==='eat'?'#FF6B6B':r.cat==='move'?'#4A9FD4':r.cat==='see'?'#4ECDC4':r.cat==='rest'?'#FFB800':'#999999';
-    const catIconBg=r.cat==='eat'?'#FFE5E5':r.cat==='move'?'#E5F4FF':r.cat==='see'?'#E5FAF8':r.cat==='rest'?'#FFF8E1':'#F2F2F2';
-    const catLabel=r.cat==='eat'?'식사':r.cat==='move'?'이동':r.cat==='see'?'관광':r.cat==='rest'?'숙박':'기타';
+    const catColor=(CATS[r.cat]||CATS.etc).color;
+    const catBadgeBg=(CATS[r.cat]||CATS.etc).color;
+    const catIconBg=(CATS[r.cat]||CATS.etc).bg;
+    const catLabel=(CATS[r.cat]||CATS.etc).label;
     const locHtml=r.location?(isMapUrl(r.location)?
       `<a href="${esc(r.location)}" target="_blank" style="color:#C85A2A;font-size:13px;text-decoration:none;display:flex;align-items:center;gap:3px;"><i class="ti ti-map-pin" style="font-size:12px;"></i>지도 보기</a>`:
       `<span style="font-size:13px;">${esc(r.location)}</span>`):'—';
