@@ -966,6 +966,11 @@ table.sp td{overflow:hidden;}
 <div id="citySheet" style="display:none;position:fixed;bottom:0;left:0;right:0;background:var(--white);border-radius:16px 16px 0 0;padding:16px;z-index:8001;max-height:70vh;overflow-y:auto;">
   <div style="font-size:13px;font-weight:500;color:var(--ink);margin-bottom:12px;" id="citySheetTitle">도시 선택</div>
   <div id="citySheetGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;"></div>
+  <div style="display:flex;gap:8px;margin-top:14px;">
+    <button onclick="closeCitySheet()" style="flex:1;padding:10px;border-radius:8px;border:0.5px solid var(--sand3);background:var(--white);font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink3);cursor:pointer;">취소</button>
+    <button onclick="confirmCitySheet()" style="flex:1;padding:10px;border-radius:8px;border:none;background:var(--terra);font-family:'DM Sans',sans-serif;font-size:13px;color:#fff;font-weight:500;cursor:pointer;">선택</button>
+  </div>
+</div>
 
 <!-- 위치 수정 바텀시트 -->
 <div id="locSheetOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:8100;" onclick="closeLocSheet()"></div>
@@ -979,11 +984,6 @@ table.sp td{overflow:hidden;}
   <div style="display:flex;gap:8px;">
     <button onclick="closeLocSheet()" style="flex:1;padding:10px;border-radius:10px;border:none;background:var(--sand2);font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink3);cursor:pointer;">취소</button>
     <button onclick="saveLocSheet()" style="flex:1;padding:10px;border-radius:10px;border:none;background:var(--terra);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;color:#fff;cursor:pointer;">저장</button>
-  </div>
-</div>
-  <div style="display:flex;gap:8px;margin-top:14px;">
-    <button onclick="closeCitySheet()" style="flex:1;padding:10px;border-radius:8px;border:0.5px solid var(--sand3);background:var(--white);font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink3);cursor:pointer;">취소</button>
-    <button onclick="confirmCitySheet()" style="flex:1;padding:10px;border-radius:8px;border:none;background:var(--terra);font-family:'DM Sans',sans-serif;font-size:13px;color:#fff;font-weight:500;cursor:pointer;">선택</button>
   </div>
 </div>
 
