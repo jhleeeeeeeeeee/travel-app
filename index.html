@@ -2286,7 +2286,18 @@ document.addEventListener('click',function(e){
   if(t.closest('#btnAddRow')||t.closest('#dBtnAddRow')){addRow();return;}
 
   /* 이벤트 모달 */
-  if(t.closest('#btnCloseEvt')||t.closest('#btnCancelEvt')){closeModal('evtModal');return;}
+  if(t.closest('#btnCloseEvt')||t.closest('#btnCancelEvt')){
+    // 새 일정 추가 중 취소하면 빈 일정 삭제
+    if(editEvtId&&pendingDayKey){
+      const trip=getTrip(currentId);
+      const ev=(trip.events[pendingDayKey]||[]).find(e=>e.id===editEvtId);
+      if(ev&&!ev.content){
+        trip.events[pendingDayKey]=trip.events[pendingDayKey].filter(e=>e.id!==editEvtId);
+        persist();renderAll();
+      }
+    }
+    closeModal('evtModal');return;
+  }
   if(t.closest('#btnSaveEvt')){saveEvt();return;}
   const catBtn=t.closest('.cat-btn');if(catBtn&&catBtn.closest('.cat-grid')){selCat(catBtn.id.replace('cat-',''));return;}
   if(t.closest('#btnGenUrl')){const q=document.getElementById('mapQ').value.trim()||document.getElementById('evtTitle').value.trim();if(!q){alert('장소명을 입력해주세요.');return;}document.getElementById('genUrlEl').textContent='https://www.google.com/maps/search/'+encodeURIComponent(q);document.getElementById('urlBox').classList.add('vis');document.getElementById('copyBtn').textContent='복사';document.getElementById('copyBtn').className='copy-btn';return;}
