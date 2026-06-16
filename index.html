@@ -1501,7 +1501,6 @@ function renderMobTable(){
 
     return `<tr data-rowid="${r.id}">
       <td colspan="9" style="padding:0;padding-bottom:8px;border-bottom:none;">
-        ${isExpanded?`<div data-locevt="${r.id}" data-locdk="${activeDayKey}" style="display:flex;justify-content:flex-end;padding:0 0 4px;"><span style="font-size:11px;color:var(--terra);cursor:pointer;text-decoration:underline;">📍 위치 수정</span></div>`:''}
         <div style="background:#fff;border-radius:14px;overflow:hidden;border:none;">
           <!-- 카드 헤더 C스타일 -->
           <div class="mob-card-header" data-cardid="${r.id}" style="display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;-webkit-tap-highlight-color:transparent;background:#fff;">
@@ -1530,7 +1529,10 @@ function renderMobTable(){
             ${mobFld(r,'region','소재지',r.region||'')}
             ${mobFld(r,'note','비고',r.note||'')}
             <div style="grid-column:1/-1;">
-              <div style="font-size:11px;color:var(--ink3);margin-bottom:3px;letter-spacing:.04em;">위치</div>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;">
+                <div style="font-size:11px;color:var(--ink3);letter-spacing:.04em;">위치</div>
+                <a href="javascript:void(0)" onclick="event.stopPropagation();mobEditLocation('${r.id}','${activeDayKey}');return false;" style="font-size:11px;color:var(--terra);border:0.5px solid var(--terra);border-radius:6px;padding:2px 8px;cursor:pointer;text-decoration:none;">위치 수정</a>
+              </div>
               <div style="font-size:13px;color:var(--ink);">${locHtml||'—'}</div>
             </div>
           </div>
@@ -2143,6 +2145,8 @@ document.addEventListener('click',function(e){
   if(etDot){etColor=etDot.dataset.ec;document.querySelectorAll('#etColorPick .color-dot').forEach(d=>d.classList.toggle('sel',d===etDot));return;}
 
   // 모바일 카드 헤더 탭
+  // a 태그는 브라우저가 직접 처리
+  if(e.target.tagName==='A') return;
   // button 태그 onclick은 브라우저가 직접 처리 — 전역 핸들러 개입 안함
   if(e.target.tagName==='BUTTON'&&e.target.onclick) return;
   // 위치 수정 버튼
