@@ -976,11 +976,17 @@ table.sp td{overflow:hidden;}
 <div id="locSheetOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:8100;" onclick="closeLocSheet()"></div>
 <div id="locSheet" style="display:none;position:fixed;bottom:0;left:0;right:0;background:var(--white);border-radius:16px 16px 0 0;padding:16px;z-index:8101;max-height:80vh;overflow-y:auto;">
   <div style="font-size:14px;font-weight:500;color:var(--ink);margin-bottom:14px;">위치 수정</div>
-  <div style="font-size:11px;color:var(--ink3);margin-bottom:5px;">구글맵 공유 링크</div>
-  <input id="locSheetUrl" placeholder="https://maps.app.goo.gl/..." style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid var(--sand3);font-size:13px;font-family:'DM Sans',sans-serif;background:var(--sand);color:var(--ink);outline:none;margin-bottom:6px;">
-  <div style="font-size:11px;color:var(--ink3);margin-bottom:12px;">구글맵에서 장소 검색 → 공유 → 링크 복사 후 붙여넣기</div>
-  <div style="font-size:11px;color:var(--ink3);margin-bottom:5px;">또는 텍스트로 직접 입력</div>
-  <input id="locSheetText" placeholder="장소명 직접 입력" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid var(--sand3);font-size:13px;font-family:'DM Sans',sans-serif;background:var(--sand);color:var(--ink);outline:none;margin-bottom:12px;">
+
+  <div style="font-size:11px;color:var(--ink3);margin-bottom:5px;">장소명으로 검색</div>
+  <div style="display:flex;gap:8px;margin-bottom:6px;">
+    <input id="locSheetText" placeholder="예: 인천공항 제2터미널" style="flex:1;padding:10px 12px;border-radius:10px;border:1px solid var(--sand3);font-size:13px;font-family:'DM Sans',sans-serif;background:var(--sand);color:var(--ink);outline:none;">
+    <button onclick="locSearchGoogle()" style="padding:10px 14px;border-radius:10px;border:none;background:var(--terra);color:#fff;font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;white-space:nowrap;">검색</button>
+  </div>
+  <div id="locSearchResult" style="display:none;margin-bottom:12px;"></div>
+
+  <div style="font-size:11px;color:var(--ink3);margin-bottom:5px;">또는 구글맵 링크 직접 입력</div>
+  <input id="locSheetUrl" placeholder="https://maps.app.goo.gl/..." style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid var(--sand3);font-size:13px;font-family:'DM Sans',sans-serif;background:var(--sand);color:var(--ink);outline:none;margin-bottom:12px;">
+
   <div style="display:flex;gap:8px;">
     <button onclick="closeLocSheet()" style="flex:1;padding:10px;border-radius:10px;border:none;background:var(--sand2);font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink3);cursor:pointer;">취소</button>
     <button onclick="saveLocSheet()" style="flex:1;padding:10px;border-radius:10px;border:none;background:var(--terra);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;color:#fff;cursor:pointer;">저장</button>
@@ -2358,12 +2364,29 @@ function saveEditTrip(){
 }
 let _ntSelectedCity='';
 let _locSheetEvtId=null,_locSheetDk=null;
+
+function locSearchGoogle(){
+  const text=document.getElementById('locSheetText').value.trim();
+  if(!text)return;
+  const searchUrl='https://www.google.com/maps/search/'+encodeURIComponent(text);
+  const result=document.getElementById('locSearchResult');
+  result.style.display='block';
+  result.innerHTML=`
+    <div style="background:var(--sand);border-radius:10px;padding:10px 12px;">
+      <div style="font-size:11px;color:var(--ink3);margin-bottom:6px;">구글맵에서 확인 후 공유 링크를 아래에 붙여넣으세요</div>
+      <a href="${searchUrl}" target="_blank" style="display:flex;align-items:center;gap:6px;color:var(--terra);font-size:13px;font-weight:500;text-decoration:none;">
+        <i class="ti ti-map-pin" style="font-size:14px;"></i> 구글맵에서 "${text}" 검색하기 →
+      </a>
+    </div>`;
+}
+
 function mobEditLocation(evtId,dk){
   if(window._readOnly)return;
   _locSheetEvtId=evtId;_locSheetDk=dk;
   const trip=getTrip(currentId);
   const ev=(trip.events[dk]||[]).find(r=>r.id===evtId);
   const loc=ev?ev.location||'':'';
+  document.getElementById('locSearchResult').style.display='none';
   if(loc.startsWith('http')){
     document.getElementById('locSheetUrl').value=loc;
     document.getElementById('locSheetText').value='';
@@ -2373,7 +2396,7 @@ function mobEditLocation(evtId,dk){
   }
   document.getElementById('locSheetOverlay').style.display='block';
   document.getElementById('locSheet').style.display='block';
-  setTimeout(()=>document.getElementById('locSheetUrl').focus(),100);
+  setTimeout(()=>document.getElementById('locSheetText').focus(),100);
 }
 function closeLocSheet(){
   document.getElementById('locSheetOverlay').style.display='none';
