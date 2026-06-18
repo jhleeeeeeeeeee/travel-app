@@ -1569,6 +1569,11 @@ function renderMobTable(){
     const catBadgeBg=(CATS[r.cat]||CATS.etc).color;
     const catIconBg=(CATS[r.cat]||CATS.etc).bg;
     const catLabel=(CATS[r.cat]||CATS.etc).label;
+    const _tripForRow=getTrip(currentId);
+    const _partsRow=(_tripForRow?.country||'').split('|');
+    const localCur=_partsRow[2]||'KRW';
+    const curSym=getCurSymbol(localCur);
+    const members=_tripForRow?.members||[];
     const locHtml=r.location?(isMapUrl(r.location)?
       `<a href="${esc(r.location)}" target="_blank" style="color:#C85A2A;font-size:13px;text-decoration:none;display:flex;align-items:center;gap:3px;"><i class="ti ti-map-pin" style="font-size:12px;"></i>지도 보기</a>`:
       `<span style="font-size:13px;">${esc(r.location)}</span>`):'—';
