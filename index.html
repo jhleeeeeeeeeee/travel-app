@@ -1604,7 +1604,7 @@ function renderMobTable(){
             ${mobFld(r,'content','내용',esc(r.content))}
             ${(() => {
               const _dCur=r.costCurrency&&r.costCurrency!=='KRW'?r.costCurrency:'KRW';
-              const _dVal=_dCur!=='KRW'&&r.costLocal?getCurSymbol(_dCur)+Number(r.costLocal).toFixed(2):(r.cost?'₩'+fmtCost(r.cost):'—');
+              const _dVal=_dCur!=='KRW'&&r.costLocal?getCurSymbol(_dCur)+fmtLocal(r.costLocal):(r.cost?'₩'+fmtCost(r.cost):'—');
               const _tog=localCur!=='KRW'?'<span data-curdropt="'+r.id+'" data-curdk="'+activeDayKey+'" style="display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:999px;background:'+(_dCur!=='KRW'?'#E4F2F7':'#FDF0EA')+';border:0.5px solid '+(_dCur!=='KRW'?'#AAD4E4':'#F0C4AC')+';font-size:10px;color:'+(_dCur!=='KRW'?'#2A6B7C':'var(--terra)')+';font-weight:500;cursor:pointer;margin-left:6px;">'+(_dCur!=='KRW'?curSym+' '+localCur:'₩ KRW')+' <i class="ti ti-chevron-down" style="font-size:9px;"></i></span>':'';
               return '<div><div style="font-size:11px;color:var(--ink3);margin-bottom:3px;">비용</div><div style="font-size:13px;color:var(--ink);display:flex;align-items:center;flex-wrap:wrap;">'+_dVal+_tog+'</div></div>';
             })()}
@@ -2734,7 +2734,7 @@ function renderExpenseTab(){
       </div>
       ${localCur !== 'KRW' ? `<div style="background:var(--sand);border-radius:10px;padding:8px 10px;">
         <div style="font-size:10px;color:var(--ink3);">${localCur} 합계</div>
-        <div style="font-size:14px;font-weight:500;color:var(--ink);">${localSymbol}${localTotal.toFixed(2)}</div>
+        <div style="font-size:14px;font-weight:500;color:var(--ink);">${localSymbol}${fmtLocal(localTotal)}</div>
       </div>` : ''}
     </div>`;
 
@@ -2750,7 +2750,7 @@ function renderExpenseTab(){
         </div>
         <div style="text-align:right;">
           ${d.krw ? `<div style="font-size:12px;font-weight:500;color:${c};">₩${fmtCost(d.krw)}</div>` : ''}
-          ${d.local && localCur !== 'KRW' ? `<div style="font-size:12px;color:${c};">${localSymbol}${d.local.toFixed(2)}</div>` : ''}
+          ${d.local && localCur !== 'KRW' ? `<div style="font-size:12px;color:${c};">${localSymbol}${fmtLocal(d.local)}</div>` : ''}
           ${!d.krw && !d.local ? `<span style="font-size:11px;color:var(--ink3);">지출 없음</span>` : ''}
         </div>
       </div>`;
@@ -2776,7 +2776,7 @@ function renderExpenseTab(){
         </div>
         <div style="text-align:right;">
         ${ev.costCurrency&&ev.costCurrency!=='KRW'
-          ? `<div style="font-size:13px;font-weight:500;color:var(--ink);">${getCurSymbol(ev.costCurrency)}${Number(ev.costLocal).toFixed(2)}</div>`
+          ? `<div style="font-size:13px;font-weight:500;color:var(--ink);">${getCurSymbol(ev.costCurrency)}${fmtLocal(ev.costLocal)}</div>`
           : ev.cost ? `<div style="font-size:13px;font-weight:500;color:var(--ink);">₩${fmtCost(ev.cost)}</div>` : ''
         }
           ${payer ? `<span style="display:inline-flex;font-size:10px;padding:2px 8px;border-radius:999px;background:${pc}18;color:${pc};font-weight:500;margin-top:2px;">${payer}</span>` : ''}
@@ -2848,7 +2848,7 @@ async function onEvtCostInput(){
   const sym = getCurSymbol(_evtLocalCur);
   if(_evtCurMode === 'KRW'){
     const local = Math.round((val / rate) * 100) / 100;
-    txtEl.innerHTML = `입력 시점 환율 기준 → <span style="color:#2A6B7C;font-weight:500;">${sym}${local.toFixed(2)}</span> (1${_evtLocalCur}=${Math.round(rate).toLocaleString()}원)`;
+    txtEl.innerHTML = `입력 시점 환율 기준 → <span style="color:#2A6B7C;font-weight:500;">${sym}${fmtLocal(local)}</span> (1${_evtLocalCur}=${Math.round(rate).toLocaleString()}원)`;
   } else {
     const krw = Math.round(val * rate);
     txtEl.innerHTML = `입력 시점 환율 기준 → <span style="color:#C85A2A;font-weight:500;">₩${fmtCost(krw)}</span> (1${_evtLocalCur}=${Math.round(rate).toLocaleString()}원)`;
@@ -2856,6 +2856,12 @@ async function onEvtCostInput(){
   convertEl.style.display = 'flex';
 }
 
+function fmtLocal(n){
+  const num = Number(n);
+  const parts = num.toFixed(2).split('.');
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g,',');
+  return parts.join('.');
+}
 function getCurSymbol(cur){
   const s = {'KRW':'₩','USD':'$','EUR':'€','JPY':'¥','GBP':'£','CNY':'¥','AUD':'A$','CAD':'C$','CHF':'Fr','HKD':'HK$','SGD':'S$','THB':'฿','VND':'₫','MYR':'RM','IDR':'Rp','PHP':'₱','TWD':'NT$','AED':'د.إ','TRY':'₺','INR':'₹','NZD':'NZ$','KRW':'₩','MVR':'Rf','MAD':'MAD'};
   return s[cur] || cur;
