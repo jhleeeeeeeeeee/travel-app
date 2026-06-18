@@ -1597,48 +1597,40 @@ function renderMobTable(){
           <!-- 세부내용 -->
           <div style="border-top:0.5px solid #F0EBE4;padding:14px;display:grid;grid-template-columns:1fr 1fr;gap:14px;background:#fff;">
             ${mobFld(r,'content','내용',esc(r.content))}
-            ${mobFld(r,'cost','비용(₩)',r.cost?fmtCost(r.cost):'')}
+            (() => {
+              const _dCur=r.costCurrency&&r.costCurrency!=='KRW'?r.costCurrency:'KRW';
+              const _dVal=_dCur!=='KRW'&&r.costLocal?getCurSymbol(_dCur)+Number(r.costLocal).toFixed(2):(r.cost?'₩'+fmtCost(r.cost):'—');
+              const _tog=localCur!=='KRW'?'<span data-curdropt="'+r.id+'" data-curdk="'+activeDayKey+'" style="display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:999px;background:'+(_dCur!=='KRW'?'#E4F2F7':'#FDF0EA')+';border:0.5px solid '+(_dCur!=='KRW'?'#AAD4E4':'#F0C4AC')+';font-size:10px;color:'+(_dCur!=='KRW'?'#2A6B7C':'var(--terra)')+';font-weight:500;cursor:pointer;margin-left:6px;">'+(_dCur!=='KRW'?curSym+' '+localCur:'₩ KRW')+' <i class="ti ti-chevron-down" style="font-size:9px;"></i></span>':'';
+              return '<div><div style="font-size:11px;color:var(--ink3);margin-bottom:3px;">비용</div><div style="font-size:13px;color:var(--ink);display:flex;align-items:center;flex-wrap:wrap;">'+_dVal+_tog+'</div></div>';
+            })()}
             ${(()=>{
-              const trip=getTrip(currentId);
-              const parts=(trip.country||'').split('|');
-              const localCur=parts[2]||'KRW';
-              const members=trip.members||[];
-              const curSym=getCurSymbol(localCur);
-              // 통화 뱃지 + 드롭다운
-              const isCurDropOpen = window._curDropOpen === r.id;
-              const curBadge=localCur!=='KRW'?`
-                <div style="grid-column:1/-1;padding:4px 0;">
-                  <div style="display:flex;align-items:center;gap:8px;">
-                    <span style="font-size:11px;color:var(--ink3);">KRW ₩${r.cost?fmtCost(r.cost):'—'}</span>
-                    <span style="font-size:11px;color:var(--ink3);">${localCur} ${r.costLocal?curSym+Number(r.costLocal).toFixed(2):'—'}</span>
-                    <div data-curdropt="${r.id}" data-curdk="${activeDayKey}" style="margin-left:auto;display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:999px;background:#FDF0EA;border:0.5px solid #F0C4AC;font-size:11px;color:var(--terra);font-weight:500;cursor:pointer;">
-                      ${r.costCurrency&&r.costCurrency!=='KRW'?curSym+' '+localCur:'₩ KRW'} <i class="ti ti-chevron-down" style="font-size:10px;"></i>
-                    </div>
-                  </div>
-                  ${isCurDropOpen?`<div style="background:var(--white);border-radius:10px;border:0.5px solid var(--sand3);overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,.1);margin-top:6px;">
-                    <div data-selcur="KRW" data-scevt="${r.id}" data-scdk="${activeDayKey}" style="padding:10px 14px;font-size:13px;display:flex;align-items:center;justify-content:space-between;border-bottom:0.5px solid var(--sand2);cursor:pointer;background:${(!r.costCurrency||r.costCurrency==='KRW')?'#FDF0EA':'#fff'};color:${(!r.costCurrency||r.costCurrency==='KRW')?'var(--terra)':'var(--ink)'};">
-                      <span>₩ KRW — 원화</span>${(!r.costCurrency||r.costCurrency==='KRW')?'<i class="ti ti-check" style="color:var(--terra);"></i>':''}
-                    </div>
-                    <div data-selcur="${localCur}" data-scevt="${r.id}" data-scdk="${activeDayKey}" style="padding:10px 14px;font-size:13px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;background:${r.costCurrency===localCur?'#FDF0EA':'#fff'};color:${r.costCurrency===localCur?'var(--terra)':'var(--ink)'};">
-                      <span>${curSym} ${localCur} — 현지화</span>${r.costCurrency===localCur?'<i class="ti ti-check" style="color:var(--terra);"></i>':''}
-                    </div>
-                  </div>`:''}
-                </div>`:'';
-              // 결제자
-              const payerUI=members.length?`
-                <div>
-                  <div style="font-size:11px;color:var(--ink3);margin-bottom:3px;">결제자</div>
-                  <div data-payerevt="${r.id}" data-payerdk="${activeDayKey}" style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:999px;background:var(--sand);border:0.5px solid var(--sand3);font-size:12px;color:var(--ink);cursor:pointer;">
-                    <i class="ti ti-user" style="font-size:12px;" aria-hidden="true"></i>
-                    ${r.payer||'선택'}
-                    <i class="ti ti-chevron-down" style="font-size:10px;" aria-hidden="true"></i>
-                  </div>
-                  ${_payerDropOpen===r.id?`
-                  <div style="background:var(--white);border-radius:10px;border:0.5px solid var(--sand3);overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,.1);margin-top:4px;z-index:100;position:relative;">
-                    ${members.map(m=>`<div data-selectpayer="${m}" data-spevt="${r.id}" data-spdk="${activeDayKey}" style="padding:10px 14px;font-size:13px;color:${r.payer===m?'var(--terra)':'var(--ink)'};display:flex;align-items:center;gap:8px;border-bottom:0.5px solid var(--sand2);cursor:pointer;${r.payer===m?'font-weight:500;':''}">${r.payer===m?'<i class="ti ti-check" style="font-size:13px;color:var(--terra);"></i>':'<i class="ti ti-user" style="font-size:13px;color:var(--ink3);"></i>'}${m}</div>`).join('')}
-                  </div>`:''}
-                </div>`:'';
-              return curBadge+payerUI;
+              const _isKRW=!r.costCurrency||r.costCurrency==='KRW';
+              const _isLoc=r.costCurrency===localCur;
+              const _isCurOpen=window._curDropOpen===r.id;
+              let _drop='';
+              if(_isCurOpen&&localCur!=='KRW'){
+                _drop='<div style="grid-column:1/-1;"><div style="background:var(--white);border-radius:10px;border:0.5px solid var(--sand3);overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,.1);">'
+                  +'<div data-selcur="KRW" data-scevt="'+r.id+'" data-scdk="'+activeDayKey+'" style="padding:10px 14px;font-size:13px;display:flex;align-items:center;justify-content:space-between;border-bottom:0.5px solid var(--sand2);cursor:pointer;background:'+(_isKRW?'#FDF0EA':'#fff')+';color:'+(_isKRW?'var(--terra)':'var(--ink)')+';">'
+                  +'<span>₩ KRW — 원화</span>'+(_isKRW?'<i class="ti ti-check" style="color:var(--terra);" aria-hidden="true"></i>':'')+'</div>'
+                  +'<div data-selcur="'+localCur+'" data-scevt="'+r.id+'" data-scdk="'+activeDayKey+'" style="padding:10px 14px;font-size:13px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;background:'+(_isLoc?'#E4F2F7':'#fff')+';color:'+(_isLoc?'#2A6B7C':'var(--ink)')+';">'
+                  +'<span>'+curSym+' '+localCur+' — 현지화</span>'+(_isLoc?'<i class="ti ti-check" style="color:#2A6B7C;" aria-hidden="true"></i>':'')+'</div>'
+                  +'</div></div>';
+              }
+              let _payer='';
+              if(members.length){
+                const _pOpen=_payerDropOpen===r.id;
+                _payer='<div><div style="font-size:11px;color:var(--ink3);margin-bottom:3px;">결제자</div>'
+                  +'<div data-payerevt="'+r.id+'" data-payerdk="'+activeDayKey+'" style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:999px;background:var(--sand);border:0.5px solid var(--sand3);font-size:12px;color:var(--ink);cursor:pointer;">'
+                  +'<i class="ti ti-user" style="font-size:12px;" aria-hidden="true"></i> '+(r.payer||'선택')
+                  +' <i class="ti ti-chevron-down" style="font-size:10px;" aria-hidden="true"></i></div>';
+                if(_pOpen){
+                  _payer+='<div style="background:var(--white);border-radius:10px;border:0.5px solid var(--sand3);overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,.1);margin-top:4px;z-index:100;position:relative;">'
+                    +members.map(m=>'<div data-selectpayer="'+m+'" data-spevt="'+r.id+'" data-spdk="'+activeDayKey+'" style="padding:10px 14px;font-size:13px;color:'+(r.payer===m?'var(--terra)':'var(--ink)')+';display:flex;align-items:center;gap:8px;border-bottom:0.5px solid var(--sand2);cursor:pointer;'+(r.payer===m?'font-weight:500;':'')+'"><i class="ti ti-'+(r.payer===m?'check" style="color:var(--terra)':'user" style="color:var(--ink3)')+';" aria-hidden="true"></i>'+m+'</div>').join('')
+                    +'</div>';
+                }
+                _payer+='</div>';
+              }
+              return _drop+_payer;
             })()}
             ${mobFld(r,'cat','카테고리',cat.emoji+' '+cat.label,'text',catOpts)}
             ${mobFld(r,'transport','이동수단',r.transport&&r.transport!=='—'?r.transport:'','text',transportOpts)}
@@ -2697,22 +2689,28 @@ function renderExpenseTab(){
   const allEvts = Object.values(trip.events||{}).flat();
   const dayEvts = trip.events[activeDayKey] || [];
 
-  // 원화/현지화 합계
+  // 원화/현지화 합계 - 실제 등록된 통화 기준
   let krwTotal = 0, localTotal = 0;
   dayEvts.forEach(ev => {
-    if(ev.cost) krwTotal += Number(ev.cost)||0;
-    if(ev.costLocal) localTotal += Number(ev.costLocal)||0;
+    if(ev.costCurrency && ev.costCurrency !== 'KRW'){
+      localTotal += Number(ev.costLocal)||0;
+    } else {
+      krwTotal += Number(ev.cost)||0;
+    }
   });
 
-  // 인별 합계
+  // 인별 합계 - 실제 등록된 통화 기준
   const byPayer = {};
   members.forEach(m => { byPayer[m] = {krw:0, local:0}; });
   dayEvts.forEach(ev => {
     const p = ev.payer;
     if(p){
       if(!byPayer[p]) byPayer[p] = {krw:0, local:0};
-      byPayer[p].krw += Number(ev.cost)||0;
-      byPayer[p].local += Number(ev.costLocal)||0;
+      if(ev.costCurrency && ev.costCurrency !== 'KRW'){
+        byPayer[p].local += Number(ev.costLocal)||0;
+      } else {
+        byPayer[p].krw += Number(ev.cost)||0;
+      }
     }
   });
 
@@ -2768,8 +2766,10 @@ function renderExpenseTab(){
           <div style="font-size:11px;color:var(--ink3);margin-top:1px;">${cat.label} · ${ev.startTime||ev.time||''}</div>
         </div>
         <div style="text-align:right;">
-          ${ev.cost ? `<div style="font-size:13px;font-weight:500;color:var(--ink);">₩${fmtCost(ev.cost)}</div>` : ''}
-          ${ev.costLocal && localCur !== 'KRW' ? `<div style="font-size:12px;color:var(--ink2);">${localSymbol}${Number(ev.costLocal).toFixed(2)}</div>` : ''}
+        ${ev.costCurrency&&ev.costCurrency!=='KRW'
+          ? `<div style="font-size:13px;font-weight:500;color:var(--ink);">${getCurSymbol(ev.costCurrency)}${Number(ev.costLocal).toFixed(2)}</div>`
+          : ev.cost ? `<div style="font-size:13px;font-weight:500;color:var(--ink);">₩${fmtCost(ev.cost)}</div>` : ''
+        }
           ${payer ? `<span style="display:inline-flex;font-size:10px;padding:2px 8px;border-radius:999px;background:${pc}18;color:${pc};font-weight:500;margin-top:2px;">${payer}</span>` : ''}
         </div>
       </div>`;
