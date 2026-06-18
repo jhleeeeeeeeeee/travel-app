@@ -960,11 +960,24 @@ table.sp td{overflow:hidden;}
         <div class="gl-field"><label>종료 시간</label><select id="evtEnd"></select></div>
       </div>
       <div class="gl-field"><label>내용 *</label><input type="text" id="evtTitle" placeholder="예: 경복궁 방문"></div>
-      <div class="gl-two-col">
-        <div class="gl-field"><label>비용 (₩)</label><input type="number" id="evtCost" placeholder="0" min="0" inputmode="numeric"></div>
-        <div class="gl-field"><label>이동수단</label>
-          <select id="evtTransport"><option>—</option><option>도보</option><option>버스</option><option>지하철</option><option>택시/우버</option><option>자차</option><option>렌터카</option><option>기차</option><option>비행기</option><option>배/선박</option></select>
+      <div class="gl-field">
+        <label>비용</label>
+        <div style="display:flex;gap:8px;margin-bottom:8px;" id="evtCurToggle">
+          <div onclick="setEvtCurrency('KRW')" id="evtCurKRW" style="display:flex;align-items:center;gap:5px;padding:8px 14px;border-radius:10px;border:1.5px solid #C85A2A;background:#FDF0EA;color:#C85A2A;font-size:13px;font-weight:500;cursor:pointer;flex:1;justify-content:center;">
+            ₩ KRW <i class="ti ti-check" style="font-size:12px;" aria-hidden="true"></i>
+          </div>
+          <div onclick="setEvtCurrency('LOCAL')" id="evtCurLocal" style="display:flex;align-items:center;gap:5px;padding:8px 14px;border-radius:10px;border:1.5px solid #E0D8D0;background:#fff;color:#9A8E7A;font-size:13px;font-weight:500;cursor:pointer;flex:1;justify-content:center;" id="evtCurLocalBtn">
+            <span id="evtLocalSymbol">€</span> <span id="evtLocalCode">EUR</span>
+          </div>
         </div>
+        <input type="number" id="evtCost" placeholder="0" min="0" inputmode="numeric" oninput="onEvtCostInput()" style="width:100%;box-sizing:border-box;">
+        <div id="evtCostConvert" style="display:none;margin-top:6px;font-size:11px;color:#9A8E7A;display:flex;align-items:center;gap:4px;">
+          <i class="ti ti-arrows-exchange" style="font-size:12px;" aria-hidden="true"></i>
+          <span id="evtCostConvertTxt"></span>
+        </div>
+      </div>
+      <div class="gl-field"><label>이동수단</label>
+          <select id="evtTransport"><option>—</option><option>도보</option><option>버스</option><option>지하철</option><option>택시/우버</option><option>자차</option><option>렌터카</option><option>기차</option><option>비행기</option><option>배/선박</option></select>
       </div>
       <div class="gl-field"><label>비고</label><input type="text" id="evtNote" placeholder="예약 번호, 주의사항 등"></div>
       <div class="gl-field"><label>위치 (구글맵)</label>
@@ -1591,14 +1604,25 @@ function renderMobTable(){
               const localCur=parts[2]||'KRW';
               const members=trip.members||[];
               const curSym=getCurSymbol(localCur);
-              // 통화 뱃지
+              // 통화 뱃지 + 드롭다운
+              const isCurDropOpen = window._curDropOpen === r.id;
               const curBadge=localCur!=='KRW'?`
-                <div style="grid-column:1/-1;display:flex;align-items:center;gap:8px;padding:4px 0;">
-                  <span style="font-size:11px;color:var(--ink3);">KRW</span>
-                  <span style="font-size:13px;font-weight:500;color:var(--ink);">₩${r.cost?fmtCost(r.cost):'—'}</span>
-                  <span style="font-size:11px;color:var(--ink3);margin-left:8px;">${localCur}</span>
-                  <span style="font-size:13px;font-weight:500;color:var(--ink);">${r.costLocal?curSym+Number(r.costLocal).toFixed(2):'—'}</span>
-                  <span data-costevt="${r.id}" data-costdk="${activeDayKey}" style="font-size:10px;color:var(--terra);border:0.5px solid var(--terra);border-radius:5px;padding:1px 6px;cursor:pointer;margin-left:auto;">환율변환</span>
+                <div style="grid-column:1/-1;padding:4px 0;">
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <span style="font-size:11px;color:var(--ink3);">KRW ₩${r.cost?fmtCost(r.cost):'—'}</span>
+                    <span style="font-size:11px;color:var(--ink3);">${localCur} ${r.costLocal?curSym+Number(r.costLocal).toFixed(2):'—'}</span>
+                    <div data-curdropt="${r.id}" data-curdk="${activeDayKey}" style="margin-left:auto;display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:999px;background:#FDF0EA;border:0.5px solid #F0C4AC;font-size:11px;color:var(--terra);font-weight:500;cursor:pointer;">
+                      ${r.costCurrency&&r.costCurrency!=='KRW'?curSym+' '+localCur:'₩ KRW'} <i class="ti ti-chevron-down" style="font-size:10px;"></i>
+                    </div>
+                  </div>
+                  ${isCurDropOpen?`<div style="background:var(--white);border-radius:10px;border:0.5px solid var(--sand3);overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,.1);margin-top:6px;">
+                    <div data-selcur="KRW" data-scevt="${r.id}" data-scdk="${activeDayKey}" style="padding:10px 14px;font-size:13px;display:flex;align-items:center;justify-content:space-between;border-bottom:0.5px solid var(--sand2);cursor:pointer;background:${(!r.costCurrency||r.costCurrency==='KRW')?'#FDF0EA':'#fff'};color:${(!r.costCurrency||r.costCurrency==='KRW')?'var(--terra)':'var(--ink)'};">
+                      <span>₩ KRW — 원화</span>${(!r.costCurrency||r.costCurrency==='KRW')?'<i class="ti ti-check" style="color:var(--terra);"></i>':''}
+                    </div>
+                    <div data-selcur="${localCur}" data-scevt="${r.id}" data-scdk="${activeDayKey}" style="padding:10px 14px;font-size:13px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;background:${r.costCurrency===localCur?'#FDF0EA':'#fff'};color:${r.costCurrency===localCur?'var(--terra)':'var(--ink)'};">
+                      <span>${curSym} ${localCur} — 현지화</span>${r.costCurrency===localCur?'<i class="ti ti-check" style="color:var(--terra);"></i>':''}
+                    </div>
+                  </div>`:''}
                 </div>`:'';
               // 결제자
               const payerUI=members.length?`
@@ -2112,15 +2136,25 @@ function openEvtModal(dk,time,isEdit,evId){
   document.getElementById('evtModalTitle').textContent=isEdit?'일정 수정':'일정 추가';
   if(isEdit){
     const ev=(getTrip(currentId).events[dk]||[]).find(e=>e.id===evId);if(!ev)return;
-    document.getElementById('evtTitle').value=ev.content||'';document.getElementById('evtCost').value=ev.cost||'';
+    document.getElementById('evtTitle').value=ev.content||'';
     document.getElementById('evtNote').value=ev.note||'';document.getElementById('evtTransport').value=ev.transport||'—';
     document.getElementById('evtMap').value=ev.location||'';document.getElementById('mapQ').value='';
     document.getElementById('urlBox').style.display='none';setLinkStatus(ev.location||'');
     populatePickers(ev.startTime||ev.time||'09:00',ev.endTime||'');selCat(ev.cat||'etc');
+    // 통화 초기화 후 기존값 세팅
+    initEvtCurrency();
+    if(ev.costCurrency && ev.costCurrency!=='KRW'){
+      setEvtCurrency('LOCAL');
+      document.getElementById('evtCost').value=ev.costLocal||'';
+    } else {
+      setEvtCurrency('KRW');
+      document.getElementById('evtCost').value=ev.cost||'';
+    }
   } else {
     ['evtTitle','evtCost','evtNote','evtMap','mapQ'].forEach(x=>document.getElementById(x).value='');
     document.getElementById('evtTransport').value='—';document.getElementById('urlBox').style.display='none';
     setLinkStatus('');populatePickers(time||'09:00','');selCat('etc');
+    initEvtCurrency();
   }
   openModal('evtModal');
 }
@@ -2152,11 +2186,25 @@ function selCat(cat){
 function saveEvt(){
   const title=document.getElementById('evtTitle').value.trim();if(!title){alert('내용을 입력해주세요.');return;}
   const startTime=document.getElementById('evtStart').value,endTime=document.getElementById('evtEnd').value;
-  const cost=Number(document.getElementById('evtCost').value)||0,transport=document.getElementById('evtTransport').value;
+  const rawCost=Number(document.getElementById('evtCost').value)||0;
+  const transport=document.getElementById('evtTransport').value;
   const note=document.getElementById('evtNote').value.trim(),location=document.getElementById('evtMap').value.trim();
+  // 통화 처리
+  let cost=0, costLocal=0, costCurrency='KRW';
+  if(_evtCurMode === 'KRW' || _evtLocalCur === 'KRW'){
+    cost = rawCost;
+    if(_evtLocalCur !== 'KRW' && _evtLocalRate){
+      costLocal = Math.round((rawCost / _evtLocalRate) * 100) / 100;
+      costCurrency = _evtLocalCur;
+    }
+  } else {
+    costLocal = rawCost;
+    costCurrency = _evtLocalCur;
+    if(_evtLocalRate) cost = Math.round(rawCost * _evtLocalRate);
+  }
   const trip=getTrip(currentId);if(!trip.events[pendingDayKey])trip.events[pendingDayKey]=[];
-  if(editEvtId){const idx=trip.events[pendingDayKey].findIndex(e=>e.id===editEvtId);if(idx>=0)Object.assign(trip.events[pendingDayKey][idx],{cat:selCatV,content:title,time:startTime,startTime,endTime,cost,transport,note,location});}
-  else trip.events[pendingDayKey].push({id:uid(),cat:selCatV,content:title,time:startTime,startTime,endTime,cost,transport,note,location});
+  if(editEvtId){const idx=trip.events[pendingDayKey].findIndex(e=>e.id===editEvtId);if(idx>=0)Object.assign(trip.events[pendingDayKey][idx],{cat:selCatV,content:title,time:startTime,startTime,endTime,cost,costLocal,costCurrency,transport,note,location});}
+  else trip.events[pendingDayKey].push({id:uid(),cat:selCatV,content:title,time:startTime,startTime,endTime,cost,costLocal,costCurrency,transport,note,location});
   persist();closeModal('evtModal');renderAll();
   const sb=document.getElementById('saveBtn');sb.innerHTML='<i class="ti ti-check"></i> 저장됨';sb.classList.add('saved');setTimeout(()=>{sb.innerHTML='<i class="ti ti-device-floppy"></i> 저장';sb.classList.remove('saved');},1500);
 }
@@ -2266,6 +2314,30 @@ document.addEventListener('click',function(e){
   // 모바일 카드 헤더 탭
   // a 태그는 브라우저가 직접 처리
   if(e.target.tagName==='A') return;
+  // 통화 드롭다운
+  const curDrop=t.closest('[data-curdropt]');
+  if(curDrop){e.stopPropagation();window._curDropOpen=(window._curDropOpen===curDrop.dataset.curdropt)?null:curDrop.dataset.curdropt;renderMobTable();return;}
+  const selCur=t.closest('[data-selcur]');
+  if(selCur){
+    e.stopPropagation();
+    const evId=selCur.dataset.scevt, dk=selCur.dataset.scdk, cur=selCur.dataset.selcur;
+    const trip=getTrip(currentId);
+    const ev=(trip.events[dk]||[]).find(r=>r.id===evId);
+    if(ev){
+      const parts=(trip.country||'').split('|');
+      const localCur=parts[2]||'KRW';
+      ev.costCurrency=cur;
+      // 환율 변환
+      if(cur==='KRW'&&ev.costLocal&&localCur!=='KRW'){
+        getRate(localCur).then(rate=>{if(rate){ev.cost=Math.round(ev.costLocal*rate);persist();renderMobTable();}});
+      } else if(cur!=='KRW'&&ev.cost){
+        getRate(cur).then(rate=>{if(rate){ev.costLocal=Math.round((ev.cost/rate)*100)/100;persist();renderMobTable();}});
+      }
+      persist();
+    }
+    window._curDropOpen=null;
+    renderMobTable();return;
+  }
   // 결제자 드롭다운
   const payerEvt=t.closest('[data-payerevt]');
   if(payerEvt){e.stopPropagation();togglePayerDrop(payerEvt.dataset.payerevt,payerEvt.dataset.payerdk);return;}
@@ -2705,6 +2777,78 @@ function renderExpenseTab(){
   }
 
   document.getElementById('expenseTabBody').innerHTML = html;
+}
+
+// ── 일정 등록 통화 선택 ──
+let _evtCurMode = 'KRW'; // 'KRW' | 'LOCAL'
+let _evtLocalCur = 'KRW';
+let _evtLocalRate = 1; // 1 LOCAL = N KRW
+
+function initEvtCurrency(){
+  const trip = getTrip(currentId);
+  const parts = (trip?.country||'').split('|');
+  _evtLocalCur = parts[2] || 'KRW';
+  _evtCurMode = 'KRW';
+  const sym = getCurSymbol(_evtLocalCur);
+  const localBtn = document.getElementById('evtCurLocal');
+  const symEl = document.getElementById('evtLocalSymbol');
+  const codeEl = document.getElementById('evtLocalCode');
+  if(symEl) symEl.textContent = sym;
+  if(codeEl) codeEl.textContent = _evtLocalCur;
+  if(localBtn){
+    if(_evtLocalCur === 'KRW'){
+      localBtn.style.display = 'none'; // 국내여행이면 숨김
+    } else {
+      localBtn.style.display = 'flex';
+    }
+  }
+  setEvtCurrency('KRW');
+  // 환율 미리 가져오기
+  if(_evtLocalCur !== 'KRW'){
+    getRate(_evtLocalCur).then(r => { if(r) _evtLocalRate = r; });
+  }
+}
+
+function setEvtCurrency(mode){
+  _evtCurMode = mode;
+  const krwBtn = document.getElementById('evtCurKRW');
+  const localBtn = document.getElementById('evtCurLocal');
+  const sym = getCurSymbol(_evtLocalCur);
+  if(krwBtn){
+    if(mode === 'KRW'){
+      krwBtn.style.cssText += ';border-color:#C85A2A;background:#FDF0EA;color:#C85A2A;';
+    } else {
+      krwBtn.style.cssText += ';border-color:#E0D8D0;background:#fff;color:#9A8E7A;';
+    }
+  }
+  if(localBtn){
+    if(mode === 'LOCAL'){
+      localBtn.style.cssText += ';border-color:#2A6B7C;background:#E4F2F7;color:#2A6B7C;';
+    } else {
+      localBtn.style.cssText += ';border-color:#E0D8D0;background:#fff;color:#9A8E7A;';
+    }
+  }
+  const inp = document.getElementById('evtCost');
+  if(inp) inp.value = '';
+  document.getElementById('evtCostConvert').style.display = 'none';
+}
+
+async function onEvtCostInput(){
+  const val = Number(document.getElementById('evtCost').value) || 0;
+  if(!val || _evtLocalCur === 'KRW') return;
+  const convertEl = document.getElementById('evtCostConvert');
+  const txtEl = document.getElementById('evtCostConvertTxt');
+  const rate = _evtLocalRate || await getRate(_evtLocalCur) || 1;
+  _evtLocalRate = rate;
+  const sym = getCurSymbol(_evtLocalCur);
+  if(_evtCurMode === 'KRW'){
+    const local = Math.round((val / rate) * 100) / 100;
+    txtEl.innerHTML = `입력 시점 환율 기준 → <span style="color:#2A6B7C;font-weight:500;">${sym}${local.toFixed(2)}</span> (1${_evtLocalCur}=${Math.round(rate).toLocaleString()}원)`;
+  } else {
+    const krw = Math.round(val * rate);
+    txtEl.innerHTML = `입력 시점 환율 기준 → <span style="color:#C85A2A;font-weight:500;">₩${fmtCost(krw)}</span> (1${_evtLocalCur}=${Math.round(rate).toLocaleString()}원)`;
+  }
+  convertEl.style.display = 'flex';
 }
 
 function getCurSymbol(cur){
