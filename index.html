@@ -651,7 +651,10 @@ table.sp td{overflow:hidden;}
         <div class="add-row-btn" id="btnAddRow"><i class="ti ti-plus"></i> 새 일정 추가</div>
       </div>
     </div>
-    <!-- 타임라인 (모바일) -->
+    <!-- 세부지출 (모바일) -->
+    <div class="pane-table-wrap" id="mobPaneExp" style="display:none;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;">
+      <div id="expenseTabBody"></div>
+    </div>
     <div class="tl-wrap-outer" id="mobPaneTl">
       <div class="tl-wrap" id="tlWrapMob" style="position:relative">
         <div class="tl-grid" id="tlGridMob" style="position:relative;">
@@ -732,6 +735,7 @@ table.sp td{overflow:hidden;}
   <nav class="bottom-nav" id="bottomNav">
     <button class="bnav-btn active" id="bnavTable" data-tab="table"><i class="ti ti-table"></i>일정표</button>
     <button class="bnav-btn" id="bnavTl" data-tab="tl"><i class="ti ti-timeline"></i>타임라인</button>
+    <button class="bnav-btn" id="bnavExp" data-tab="exp"><i class="ti ti-receipt"></i>세부지출</button>
   </nav>
 </div>
 
@@ -850,6 +854,17 @@ table.sp td{overflow:hidden;}
         <div id="ntCityGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;"></div>
       </div>
       <div class="preview-name" id="ntPreview">여행 이름을 입력해주세요</div>
+      <div class="gl-field">
+        <label>여행 멤버 <span style="font-size:11px;color:var(--ink3);font-weight:400;">(선택 · 비용 분담 시 사용)</span></label>
+        <div id="ntMemberWrap" style="display:flex;flex-wrap:wrap;align-items:center;gap:4px;border:1px solid var(--sand3);border-radius:10px;padding:8px 10px;min-height:44px;background:var(--sand);">
+          <span style="font-size:12px;color:var(--ink3);">멤버를 추가하세요</span>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:6px;">
+          <input id="ntMemberInput" placeholder="이름 입력" style="flex:1;font-family:'DM Sans',sans-serif;font-size:14px;border:0.5px solid var(--sand3);border-radius:9px;padding:7px 10px;background:var(--white);color:var(--ink);outline:none;"
+            onkeydown="if(event.key==='Enter'){event.preventDefault();ntAddMember();}">
+          <button onclick="ntAddMember()" style="padding:7px 14px;border-radius:9px;border:none;background:var(--terra);color:#fff;font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;">추가</button>
+        </div>
+      </div>
       <div class="gl-two-col">
         <div class="gl-field"><label>출발일</label><input type="date" id="ntStart"></div>
         <div class="gl-field"><label>귀국일</label><input type="date" id="ntEnd"></div>
@@ -1279,14 +1294,18 @@ function renderSummary(){
 
 function setMobTab(tab){
   mobTab=tab;
-  ['table','tl','cl'].forEach(t=>{
+  ['table','tl','cl','exp'].forEach(t=>{
     const btn=document.getElementById('bnav'+t.charAt(0).toUpperCase()+t.slice(1));
     if(btn) btn.classList.toggle('active',t===tab);
     const pane=document.getElementById('mobPane'+t.charAt(0).toUpperCase()+t.slice(1));
-    if(pane) pane.classList.toggle('mob-active',t===tab);
+    if(pane){
+      if(t==='exp') pane.style.display=(t===tab?'flex':'none');
+      else pane.classList.toggle('mob-active',t===tab);
+    }
   });
   if(tab==='tl') renderMobTimeline();
   if(tab==='cl') renderMobChecklist();
+  if(tab==='exp') renderExpenseTab();
 }
 
 function renderMobContent(){
@@ -1555,6 +1574,37 @@ function renderMobTable(){
           <div style="border-top:0.5px solid #F0EBE4;padding:14px;display:grid;grid-template-columns:1fr 1fr;gap:14px;background:#fff;">
             ${mobFld(r,'content','내용',esc(r.content))}
             ${mobFld(r,'cost','비용(₩)',r.cost?fmtCost(r.cost):'')}
+            ${(()=>{
+              const trip=getTrip(currentId);
+              const parts=(trip.country||'').split('|');
+              const localCur=parts[2]||'KRW';
+              const members=trip.members||[];
+              const curSym=getCurSymbol(localCur);
+              // 통화 뱃지
+              const curBadge=localCur!=='KRW'?`
+                <div style="grid-column:1/-1;display:flex;align-items:center;gap:8px;padding:4px 0;">
+                  <span style="font-size:11px;color:var(--ink3);">KRW</span>
+                  <span style="font-size:13px;font-weight:500;color:var(--ink);">₩${r.cost?fmtCost(r.cost):'—'}</span>
+                  <span style="font-size:11px;color:var(--ink3);margin-left:8px;">${localCur}</span>
+                  <span style="font-size:13px;font-weight:500;color:var(--ink);">${r.costLocal?curSym+Number(r.costLocal).toFixed(2):'—'}</span>
+                  <span data-costevt="${r.id}" data-costdk="${activeDayKey}" style="font-size:10px;color:var(--terra);border:0.5px solid var(--terra);border-radius:5px;padding:1px 6px;cursor:pointer;margin-left:auto;">환율변환</span>
+                </div>`:'';
+              // 결제자
+              const payerUI=members.length?`
+                <div>
+                  <div style="font-size:11px;color:var(--ink3);margin-bottom:3px;">결제자</div>
+                  <div data-payerevt="${r.id}" data-payerdk="${activeDayKey}" style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:999px;background:var(--sand);border:0.5px solid var(--sand3);font-size:12px;color:var(--ink);cursor:pointer;">
+                    <i class="ti ti-user" style="font-size:12px;" aria-hidden="true"></i>
+                    ${r.payer||'선택'}
+                    <i class="ti ti-chevron-down" style="font-size:10px;" aria-hidden="true"></i>
+                  </div>
+                  ${_payerDropOpen===r.id?`
+                  <div style="background:var(--white);border-radius:10px;border:0.5px solid var(--sand3);overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,.1);margin-top:4px;z-index:100;position:relative;">
+                    ${members.map(m=>`<div data-selectpayer="${m}" data-spevt="${r.id}" data-spdk="${activeDayKey}" style="padding:10px 14px;font-size:13px;color:${r.payer===m?'var(--terra)':'var(--ink)'};display:flex;align-items:center;gap:8px;border-bottom:0.5px solid var(--sand2);cursor:pointer;${r.payer===m?'font-weight:500;':''}">${r.payer===m?'<i class="ti ti-check" style="font-size:13px;color:var(--terra);"></i>':'<i class="ti ti-user" style="font-size:13px;color:var(--ink3);"></i>'}${m}</div>`).join('')}
+                  </div>`:''}
+                </div>`:'';
+              return curBadge+payerUI;
+            })()}
             ${mobFld(r,'cat','카테고리',cat.emoji+' '+cat.label,'text',catOpts)}
             ${mobFld(r,'transport','이동수단',r.transport&&r.transport!=='—'?r.transport:'','text',transportOpts)}
             ${mobFld(r,'region','소재지',r.region||'')}
@@ -2205,6 +2255,14 @@ document.addEventListener('click',function(e){
   // 모바일 카드 헤더 탭
   // a 태그는 브라우저가 직접 처리
   if(e.target.tagName==='A') return;
+  // 결제자 드롭다운
+  const payerEvt=t.closest('[data-payerevt]');
+  if(payerEvt){e.stopPropagation();togglePayerDrop(payerEvt.dataset.payerevt,payerEvt.dataset.payerdk);return;}
+  const selPayer=t.closest('[data-selectpayer]');
+  if(selPayer){e.stopPropagation();selectPayer(selPayer.dataset.spevt,selPayer.dataset.spdk,selPayer.dataset.selectpayer);return;}
+  // 환율변환
+  const costEvt=t.closest('[data-costevt]');
+  if(costEvt){e.stopPropagation();mobToggleCostCurrency(costEvt.dataset.costevt,costEvt.dataset.costdk);return;}
   // 카테고리 아이콘 클릭
   const catEvt=t.closest('[data-catevt]');
   if(catEvt){e.stopPropagation();openCatSheet(catEvt.dataset.catevt,catEvt.dataset.catdk);return;}
@@ -2427,8 +2485,190 @@ function saveEditTrip(){
   persist();closeModal('editTripModal');renderArchive();
 }
 let _ntSelectedCity='';
-// 카테고리 수정 바텀시트
-let _catSheetEvtId=null,_catSheetDk=null;
+// ── 여행 멤버 관리 ──
+let _ntMembers = [];
+function ntAddMember(){
+  const inp = document.getElementById('ntMemberInput');
+  const name = inp.value.trim();
+  if(!name || _ntMembers.includes(name)) return;
+  _ntMembers.push(name);
+  inp.value = '';
+  renderNtMembers();
+}
+function ntRemoveMember(name){
+  _ntMembers = _ntMembers.filter(m => m !== name);
+  renderNtMembers();
+}
+function renderNtMembers(){
+  const wrap = document.getElementById('ntMemberWrap');
+  if(!wrap) return;
+  if(_ntMembers.length === 0){
+    wrap.innerHTML = '<span style="font-size:12px;color:var(--ink3);">멤버를 추가하세요</span>';
+    return;
+  }
+  const colors = ['#2A6B7C','#5A7A5A','#C85A2A','#C8A84B','#6B4FA0','#6B6550'];
+  wrap.innerHTML = _ntMembers.map((m,i) => {
+    const c = colors[i % colors.length];
+    return `<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:999px;background:${c}22;color:${c};font-size:12px;font-weight:500;">
+      ${m}
+      <i class="ti ti-x" style="font-size:11px;cursor:pointer;" onclick="ntRemoveMember('${m}')" aria-label="${m} 삭제"></i>
+    </span>`;
+  }).join('');
+}
+
+// ── 현재 환율 캐시 ──
+let _rateCache = {};
+async function getRate(currency){
+  if(currency === 'KRW') return 1;
+  if(_rateCache[currency]) return _rateCache[currency];
+  try{
+    const r = await fetch(`https://open.er-api.com/v6/latest/KRW`);
+    const d = await r.json();
+    if(d.rates && d.rates[currency]){
+      _rateCache[currency] = 1 / d.rates[currency];
+      return _rateCache[currency];
+    }
+  } catch(e){}
+  return null;
+}
+
+// ── 일정 카드 비용 통화 전환 ──
+let _costCurrency = {}; // {evtId: 'KRW'|'EUR'|...}
+async function mobToggleCostCurrency(evtId, dk){
+  if(window._readOnly) return;
+  const trip = getTrip(currentId);
+  const ev = (trip.events[dk]||[]).find(r => r.id === evtId);
+  if(!ev) return;
+  const parts = (trip.country||'').split('|');
+  const localCur = parts[2] || 'KRW';
+  const cur = _costCurrency[evtId] || 'KRW';
+  const next = (cur === 'KRW') ? localCur : 'KRW';
+  _costCurrency[evtId] = next;
+  // 환율 계산해서 저장
+  if(localCur !== 'KRW'){
+    const rate = await getRate(localCur);
+    if(rate){
+      if(next === localCur){
+        ev.costLocal = ev.cost ? Math.round((ev.cost / rate) * 100) / 100 : 0;
+        ev.costCurrency = localCur;
+      }
+    }
+  }
+  persist();
+  renderMobTable();
+}
+
+// ── 결제자 선택 드롭다운 ──
+let _payerDropOpen = null;
+function togglePayerDrop(evtId, dk){
+  if(window._readOnly) return;
+  _payerDropOpen = _payerDropOpen === evtId ? null : evtId;
+  renderMobTable();
+}
+function selectPayer(evtId, dk, payer){
+  const trip = getTrip(currentId);
+  const ev = (trip.events[dk]||[]).find(r => r.id === evtId);
+  if(ev){ ev.payer = payer; persist(); }
+  _payerDropOpen = null;
+  renderMobTable();
+}
+
+// ── 세부지출 탭 렌더 ──
+function renderExpenseTab(){
+  const trip = getTrip(currentId);
+  const parts = (trip.country||'').split('|');
+  const localCur = parts[2] || 'KRW';
+  const localSymbol = getCurSymbol(localCur);
+  const members = trip.members || [];
+  const allEvts = Object.values(trip.events||{}).flat();
+  const dayEvts = trip.events[activeDayKey] || [];
+
+  // 원화/현지화 합계
+  let krwTotal = 0, localTotal = 0;
+  dayEvts.forEach(ev => {
+    if(ev.cost) krwTotal += Number(ev.cost)||0;
+    if(ev.costLocal) localTotal += Number(ev.costLocal)||0;
+  });
+
+  // 인별 합계
+  const byPayer = {};
+  members.forEach(m => { byPayer[m] = {krw:0, local:0}; });
+  dayEvts.forEach(ev => {
+    const p = ev.payer;
+    if(p){
+      if(!byPayer[p]) byPayer[p] = {krw:0, local:0};
+      byPayer[p].krw += Number(ev.cost)||0;
+      byPayer[p].local += Number(ev.costLocal)||0;
+    }
+  });
+
+  const colors = ['#2A6B7C','#5A7A5A','#C85A2A','#C8A84B','#6B4FA0','#6B6550'];
+
+  let html = `<div style="background:var(--white);padding:12px 14px;border-bottom:0.5px solid var(--sand2);">
+    <div style="font-size:12px;color:var(--ink3);margin-bottom:8px;">Day ${Object.keys(trip.events||{}).sort().indexOf(activeDayKey)+1} 총 지출</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+      <div style="background:var(--sand);border-radius:10px;padding:8px 10px;">
+        <div style="font-size:10px;color:var(--ink3);">KRW 합계</div>
+        <div style="font-size:14px;font-weight:500;color:var(--ink);">₩${fmtCost(krwTotal)}</div>
+      </div>
+      ${localCur !== 'KRW' ? `<div style="background:var(--sand);border-radius:10px;padding:8px 10px;">
+        <div style="font-size:10px;color:var(--ink3);">${localCur} 합계</div>
+        <div style="font-size:14px;font-weight:500;color:var(--ink);">${localSymbol}${localTotal.toFixed(2)}</div>
+      </div>` : ''}
+    </div>`;
+
+  if(members.length){
+    html += `<div style="font-size:11px;color:var(--ink3);margin-bottom:6px;">인별 지출</div>`;
+    members.forEach((m,i) => {
+      const c = colors[i % colors.length];
+      const d = byPayer[m] || {krw:0,local:0};
+      html += `<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;background:${c}18;border-radius:8px;margin-bottom:4px;">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <i class="ti ti-user" style="font-size:13px;color:${c};" aria-hidden="true"></i>
+          <span style="font-size:12px;font-weight:500;color:${c};">${m}</span>
+        </div>
+        <div style="text-align:right;">
+          ${d.krw ? `<div style="font-size:12px;font-weight:500;color:${c};">₩${fmtCost(d.krw)}</div>` : ''}
+          ${d.local && localCur !== 'KRW' ? `<div style="font-size:12px;color:${c};">${localSymbol}${d.local.toFixed(2)}</div>` : ''}
+          ${!d.krw && !d.local ? `<span style="font-size:11px;color:var(--ink3);">지출 없음</span>` : ''}
+        </div>
+      </div>`;
+    });
+  }
+  html += `</div>`;
+
+  // 지출 내역
+  html += `<div style="padding:6px 14px 2px;font-size:11px;font-weight:500;color:var(--ink3);">지출 내역</div>`;
+  if(!dayEvts.filter(e => e.cost||e.costLocal).length){
+    html += `<div style="padding:20px;text-align:center;color:var(--ink3);font-size:13px;">지출 내역이 없어요</div>`;
+  } else {
+    dayEvts.filter(e => e.cost||e.costLocal).forEach(ev => {
+      const cat = CATS[ev.cat]||CATS.etc;
+      const payer = ev.payer || '';
+      const pi = members.indexOf(payer);
+      const pc = pi >= 0 ? colors[pi % colors.length] : '#9A8E7A';
+      html += `<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:0.5px solid var(--sand2);">
+        <div style="width:10px;height:10px;border-radius:50%;background:${cat.color};flex-shrink:0;"></div>
+        <div style="flex:1;">
+          <div style="font-size:13px;font-weight:500;color:var(--ink);">${esc(ev.content||'내용없음')}</div>
+          <div style="font-size:11px;color:var(--ink3);margin-top:1px;">${cat.label} · ${ev.startTime||ev.time||''}</div>
+        </div>
+        <div style="text-align:right;">
+          ${ev.cost ? `<div style="font-size:13px;font-weight:500;color:var(--ink);">₩${fmtCost(ev.cost)}</div>` : ''}
+          ${ev.costLocal && localCur !== 'KRW' ? `<div style="font-size:12px;color:var(--ink2);">${localSymbol}${Number(ev.costLocal).toFixed(2)}</div>` : ''}
+          ${payer ? `<span style="display:inline-flex;font-size:10px;padding:2px 8px;border-radius:999px;background:${pc}18;color:${pc};font-weight:500;margin-top:2px;">${payer}</span>` : ''}
+        </div>
+      </div>`;
+    });
+  }
+
+  document.getElementById('expenseTabBody').innerHTML = html;
+}
+
+function getCurSymbol(cur){
+  const s = {'KRW':'₩','USD':'$','EUR':'€','JPY':'¥','GBP':'£','CNY':'¥','AUD':'A$','CAD':'C$','CHF':'Fr','HKD':'HK$','SGD':'S$','THB':'฿','VND':'₫','MYR':'RM','IDR':'Rp','PHP':'₱','TWD':'NT$','AED':'د.إ','TRY':'₺','INR':'₹','NZD':'NZ$','KRW':'₩','MVR':'Rf','MAD':'MAD'};
+  return s[cur] || cur;
+}
 function openCatSheet(evtId,dk){
   if(window._readOnly)return;
   _catSheetEvtId=evtId;_catSheetDk=dk;
@@ -2531,6 +2771,8 @@ function ntSelectCity(city){
 }
 
 function openNewTripModal(){
+  _ntMembers = [];
+  renderNtMembers();
   document.getElementById('ntName').value='';document.getElementById('ntPreview').textContent='여행 이름을 입력해주세요';
   document.getElementById('ntCountry').value='';
   document.getElementById('ntCityWrap').style.display='none';
@@ -2544,7 +2786,7 @@ function createTrip(){
   const name=document.getElementById('ntName').value.trim();const s=document.getElementById('ntStart').value,e=document.getElementById('ntEnd').value;
   if(!name){alert('여행 이름을 입력해주세요.');return;}if(!s||!e){alert('날짜를 선택해주세요.');return;}if(s>e){alert('귀국일이 출발일보다 앞에 있습니다.');return;}
   const countryVal=document.getElementById('ntCountry').value||'';
-  const trip={id:String(Date.now()),name,start:s,end:e,color:selColor,country:countryVal,dayCity:{},events:{}};
+  const trip={id:String(Date.now()),name,start:s,end:e,color:selColor,country:countryVal,dayCity:{},members:[..._ntMembers],events:{}};
   // 모든 날짜에 기본 도시 설정
   if(_ntSelectedCity){genDays(s,e).forEach(d=>{trip.dayCity[d]=_ntSelectedCity;});}
   genDays(s,e).forEach(d=>{trip.events[d]=[];});trips.push(trip);persist();closeModal('newTripModal');renderArchive();openTrip(trip.id);
