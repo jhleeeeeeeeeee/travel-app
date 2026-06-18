@@ -1439,6 +1439,30 @@ function mobStartEdit(id,field){
   },60);
 }
 
+function mobSaveCostField(inp){
+  const evId=inp.dataset.eid, dk=inp.dataset.edk, cur=inp.dataset.cur;
+  const val=Number(inp.value)||0;
+  const trip=getTrip(currentId);
+  const ev=(trip.events[dk]||[]).find(r=>r.id===evId);
+  if(!ev)return;
+  const parts=(trip.country||'').split('|');
+  const localCur=parts[2]||'KRW';
+  if(cur==='KRW'){
+    ev.cost=val;
+    // 현지화 자동계산
+    if(localCur!=='KRW'){
+      getRate(localCur).then(rate=>{if(rate){ev.costLocal=Math.round((val/rate)*100)/100;persist();renderMobTable();}});
+    }
+  } else {
+    ev.costLocal=val;
+    ev.costCurrency=cur;
+    // 원화 자동계산
+    getRate(cur).then(rate=>{if(rate){ev.cost=Math.round(val*rate);persist();renderMobTable();}});
+  }
+  window._mobEditField=null;
+  persist();renderMobTable();
+}
+
 function mobSaveField(id,field,value,dk){
   const trip=getTrip(currentId);
   const r=(trip.events[dk]||[]).find(r=>r.id===id);
@@ -1606,25 +1630,28 @@ function renderMobTable(){
               const _dCur=r.costCurrency&&r.costCurrency!=='KRW'?r.costCurrency:'KRW';
               const _ef=window._mobEditField;
               const _eid=r.id,_edk=activeDayKey;
-              const _editCost=window._mobExpandedId===_eid&&_ef&&_ef.id===_eid&&_ef.field==='cost';
-              const _editLocal=window._mobExpandedId===_eid&&_ef&&_ef.id===_eid&&_ef.field==='costLocal';
+              const _isKRW=_dCur==='KRW';
+              const _editVal=window._mobExpandedId===_eid&&_ef&&_ef.id===_eid&&_ef.field==='costMain';
+              // 통화 선택 토글
               const _tog=localCur!=='KRW'
-                ?`<span data-curdropt="${_eid}" data-curdk="${_edk}" style="display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:999px;background:${_dCur!=='KRW'?'#E4F2F7':'#FDF0EA'};border:0.5px solid ${_dCur!=='KRW'?'#AAD4E4':'#F0C4AC'};font-size:10px;color:${_dCur!=='KRW'?'#2A6B7C':'var(--terra)'};font-weight:500;cursor:pointer;margin-left:6px;">${_dCur!=='KRW'?curSym+' '+localCur:'₩ KRW'} <i class="ti ti-chevron-down" style="font-size:9px;"></i></span>`
+                ?`<span data-curdropt="${_eid}" data-curdk="${_edk}" style="display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:999px;background:${_isKRW?'#FDF0EA':'#E4F2F7'};border:0.5px solid ${_isKRW?'#F0C4AC':'#AAD4E4'};font-size:10px;color:${_isKRW?'var(--terra)':'#2A6B7C'};font-weight:500;cursor:pointer;">${_isKRW?'₩ KRW':curSym+' '+localCur} <i class="ti ti-chevron-down" style="font-size:9px;"></i></span>`
                 :'';
-              // 원화 필드 (항상 표시)
-              const _krwDisp=_editCost
-                ?`<input id="mobFldInp_${_eid}_cost" data-eid="${_eid}" data-edk="${_edk}" type="number" value="${r.cost||0}" onchange="mobSaveField(this.dataset.eid,'cost',this.value,this.dataset.edk)" onclick="event.stopPropagation()" style="font-size:13px;border:none;border-bottom:1.5px solid var(--terra);outline:none;background:transparent;width:90px;font-family:var(--font-sans);">`
-                :`<span onclick="event.stopPropagation();window._mobEditField={id:'${_eid}',field:'cost'};renderMobTable();" style="cursor:pointer;border-bottom:1px dashed var(--sand3);">₩${r.cost?fmtCost(r.cost):'0'}</span>`;
-              // 현지화 필드 (현지화 있을때만)
-              const _locDisp=localCur!=='KRW'?(_editLocal
-                ?`<input id="mobFldInp_${_eid}_costLocal" data-eid="${_eid}" data-edk="${_edk}" type="number" step="0.01" value="${r.costLocal||0}" onchange="mobSaveField(this.dataset.eid,'costLocal',this.value,this.dataset.edk)" onclick="event.stopPropagation()" style="font-size:13px;border:none;border-bottom:1.5px solid #2A6B7C;outline:none;background:transparent;width:90px;font-family:var(--font-sans);">`
-                :`<span onclick="event.stopPropagation();window._mobEditField={id:'${_eid}',field:'costLocal'};renderMobTable();" style="cursor:pointer;border-bottom:1px dashed var(--sand3);">${getCurSymbol(localCur)}${r.costLocal?fmtLocal(r.costLocal):'0'}</span>`):'';
+              // 입력값 표시 (선택된 통화만)
+              const _mainAmt=_isKRW?(r.cost?fmtCost(r.cost):'0'):(r.costLocal?fmtLocal(r.costLocal):'0');
+              const _mainSym=_isKRW?'₩':(curSym);
+              const _mainField=_editVal
+                ?`<input id="mobFldInp_${_eid}_costMain" data-eid="${_eid}" data-edk="${_edk}" data-cur="${_dCur}" type="number" step="${_isKRW?'1':'0.01'}" value="${_isKRW?(r.cost||0):(r.costLocal||0)}" onchange="mobSaveCostField(this)" onclick="event.stopPropagation()" style="font-size:15px;font-weight:500;border:none;border-bottom:1.5px solid var(--terra);outline:none;background:transparent;width:120px;font-family:var(--font-sans);color:var(--ink);" autofocus>`
+                :`<span onclick="event.stopPropagation();window._mobEditField={id:'${_eid}',field:'costMain'};renderMobTable();" style="cursor:pointer;font-size:15px;font-weight:500;color:var(--ink);border-bottom:1px dashed var(--sand3);">${_mainSym}${_mainAmt}</span>`;
+              // 반대쪽 환산 표시
+              const _subAmt=_isKRW
+                ?(r.costLocal&&localCur!=='KRW'?`≈ ${curSym}${fmtLocal(r.costLocal)}`:'')
+                :(r.cost?`≈ ₩${fmtCost(r.cost)}`:'');
               return `<div style="grid-column:1/-1;">
-                <div style="font-size:11px;color:var(--ink3);margin-bottom:6px;">비용${_tog}</div>
-                <div style="display:flex;gap:16px;flex-wrap:wrap;">
-                  <div><div style="font-size:10px;color:var(--ink3);margin-bottom:2px;">KRW</div><div style="font-size:13px;color:var(--ink);">${_krwDisp}</div></div>
-                  ${localCur!=='KRW'?`<div><div style="font-size:10px;color:var(--ink3);margin-bottom:2px;">${localCur}</div><div style="font-size:13px;color:var(--ink);">${_locDisp}</div></div>`:''}
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                  <span style="font-size:11px;color:var(--ink3);">비용</span>${_tog}
                 </div>
+                <div style="font-size:15px;font-weight:500;color:var(--ink);">${_mainField}</div>
+                ${_subAmt?`<div style="font-size:11px;color:var(--ink3);margin-top:4px;">${_subAmt}</div>`:''}
               </div>`;
             })()}
             ${(()=>{
