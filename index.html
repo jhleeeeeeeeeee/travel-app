@@ -2188,11 +2188,11 @@ function saveEvt(){
   const note=document.getElementById('evtNote').value.trim(),location=document.getElementById('evtMap').value.trim();
   // 통화 처리
   let cost=0, costLocal=0, costCurrency='KRW';
-  if(_evtCurMode === 'KRW' || _evtLocalCur === 'KRW'){
+  if(_evtCurMode === 'KRW'){
     cost = rawCost;
+    costCurrency = 'KRW';
     if(_evtLocalCur !== 'KRW' && _evtLocalRate){
       costLocal = Math.round((rawCost / _evtLocalRate) * 100) / 100;
-      costCurrency = _evtLocalCur;
     }
   } else {
     costLocal = rawCost;
@@ -2200,9 +2200,13 @@ function saveEvt(){
     if(_evtLocalRate) cost = Math.round(rawCost * _evtLocalRate);
   }
   const trip=getTrip(currentId);if(!trip.events[pendingDayKey])trip.events[pendingDayKey]=[];
+  let savedId=editEvtId;
   if(editEvtId){const idx=trip.events[pendingDayKey].findIndex(e=>e.id===editEvtId);if(idx>=0)Object.assign(trip.events[pendingDayKey][idx],{cat:selCatV,content:title,time:startTime,startTime,endTime,cost,costLocal,costCurrency,transport,note,location});}
-  else trip.events[pendingDayKey].push({id:uid(),cat:selCatV,content:title,time:startTime,startTime,endTime,cost,costLocal,costCurrency,transport,note,location});
-  persist();closeModal('evtModal');renderAll();
+  else{const nr={id:uid(),cat:selCatV,content:title,time:startTime,startTime,endTime,cost,costLocal,costCurrency,transport,note,location};trip.events[pendingDayKey].push(nr);savedId=nr.id;}
+  persist();closeModal('evtModal');
+  // 저장된 일정 펼쳐서 보여주기
+  window._mobExpandedId=savedId;
+  renderAll();
   const sb=document.getElementById('saveBtn');sb.innerHTML='<i class="ti ti-check"></i> 저장됨';sb.classList.add('saved');setTimeout(()=>{sb.innerHTML='<i class="ti ti-device-floppy"></i> 저장';sb.classList.remove('saved');},1500);
 }
 
