@@ -1597,7 +1597,7 @@ function renderMobTable(){
           <!-- 세부내용 -->
           <div style="border-top:0.5px solid #F0EBE4;padding:14px;display:grid;grid-template-columns:1fr 1fr;gap:14px;background:#fff;">
             ${mobFld(r,'content','내용',esc(r.content))}
-            (() => {
+            ${(() => {
               const _dCur=r.costCurrency&&r.costCurrency!=='KRW'?r.costCurrency:'KRW';
               const _dVal=_dCur!=='KRW'&&r.costLocal?getCurSymbol(_dCur)+Number(r.costLocal).toFixed(2):(r.cost?'₩'+fmtCost(r.cost):'—');
               const _tog=localCur!=='KRW'?'<span data-curdropt="'+r.id+'" data-curdk="'+activeDayKey+'" style="display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:999px;background:'+(_dCur!=='KRW'?'#E4F2F7':'#FDF0EA')+';border:0.5px solid '+(_dCur!=='KRW'?'#AAD4E4':'#F0C4AC')+';font-size:10px;color:'+(_dCur!=='KRW'?'#2A6B7C':'var(--terra)')+';font-weight:500;cursor:pointer;margin-left:6px;">'+(_dCur!=='KRW'?curSym+' '+localCur:'₩ KRW')+' <i class="ti ti-chevron-down" style="font-size:9px;"></i></span>':'';
@@ -2813,24 +2813,20 @@ function setEvtCurrency(mode){
   _evtCurMode = mode;
   const krwBtn = document.getElementById('evtCurKRW');
   const localBtn = document.getElementById('evtCurLocal');
-  const sym = getCurSymbol(_evtLocalCur);
   if(krwBtn){
-    if(mode === 'KRW'){
-      krwBtn.style.cssText += ';border-color:#C85A2A;background:#FDF0EA;color:#C85A2A;';
-    } else {
-      krwBtn.style.cssText += ';border-color:#E0D8D0;background:#fff;color:#9A8E7A;';
-    }
+    krwBtn.style.borderColor = mode==='KRW'?'#C85A2A':'#E0D8D0';
+    krwBtn.style.background = mode==='KRW'?'#FDF0EA':'#fff';
+    krwBtn.style.color = mode==='KRW'?'#C85A2A':'#9A8E7A';
   }
   if(localBtn){
-    if(mode === 'LOCAL'){
-      localBtn.style.cssText += ';border-color:#2A6B7C;background:#E4F2F7;color:#2A6B7C;';
-    } else {
-      localBtn.style.cssText += ';border-color:#E0D8D0;background:#fff;color:#9A8E7A;';
-    }
+    localBtn.style.borderColor = mode==='LOCAL'?'#2A6B7C':'#E0D8D0';
+    localBtn.style.background = mode==='LOCAL'?'#E4F2F7':'#fff';
+    localBtn.style.color = mode==='LOCAL'?'#2A6B7C':'#9A8E7A';
   }
   const inp = document.getElementById('evtCost');
   if(inp) inp.value = '';
-  document.getElementById('evtCostConvert').style.display = 'none';
+  const conv = document.getElementById('evtCostConvert');
+  if(conv) conv.style.display = 'none';
 }
 
 async function onEvtCostInput(){
