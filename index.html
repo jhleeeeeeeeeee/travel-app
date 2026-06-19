@@ -87,6 +87,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--sand);color:var(--ink);}
 .pl-name{font-family:'Playfair Display',serif;font-size:16px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .pl-dates{font-size:10px;color:rgba(255,255,255,.42);}
 .save-btn{display:flex;align-items:center;gap:4px;background:var(--terra);border:none;color:#fff;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;padding:7px 13px;border-radius:8px;flex-shrink:0;white-space:nowrap;}
+.refresh-btn{display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.12);border:none;color:#fff;cursor:pointer;width:32px;height:32px;border-radius:8px;flex-shrink:0;margin-right:8px;font-size:16px;}
+.refresh-btn.spinning i{animation:spin .6s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.ptr-indicator{display:flex;flex-direction:column;align-items:center;gap:4px;padding:0;height:0;overflow:hidden;transition:height .2s;color:var(--terra);}
+.ptr-indicator.show{height:48px;padding:10px 0;}
+.ptr-indicator i{font-size:18px;}
+.ptr-indicator.spinning i{animation:spin .6s linear infinite;}
+.ptr-indicator span{font-size:11px;color:var(--ink3);}
 .save-btn.saved{background:var(--sage);}
 
 /* 날짜 탭 + 요약 */
@@ -415,6 +423,7 @@ table.sp td{overflow:hidden;}
 
 <!-- ══ ARCHIVE PAGE ══ -->
 <div class="archive-pg hidden" id="archivePage">
+  <div class="ptr-indicator" id="ptrIndicatorArch"><i class="ti ti-arrow-down"></i><span>당겨서 새로고침</span></div>
   <div class="arch-inner-wrap">
     <div class="arch-hero">
       <div class="arch-hero-inner">
@@ -589,6 +598,7 @@ table.sp td{overflow:hidden;}
   <div class="pl-header">
     <button class="back-btn" id="btnBackPlanner"><i class="ti ti-arrow-left"></i> 목록</button>
     <div class="pl-title-wrap"><div class="pl-name" id="plName">-</div><div class="pl-dates" id="plDates">-</div></div>
+    <button class="refresh-btn" id="btnRefreshTrip" title="새로고침"><i class="ti ti-refresh" id="refreshIcon"></i></button>
     <button class="save-btn" id="saveBtn"><i class="ti ti-device-floppy"></i> 저장</button>
   </div>
   <div class="pl-sub">
@@ -643,6 +653,7 @@ table.sp td{overflow:hidden;}
   <div class="pl-content">
     <!-- 일정표 -->
     <div class="pane-table-wrap mob-active" id="mobPaneTable">
+      <div class="ptr-indicator" id="ptrIndicatorTable"><i class="ti ti-arrow-down"></i><span>당겨서 새로고침</span></div>
       <div class="tbl-scroll">
         <table class="sp" id="mobTable" style="table-layout:fixed;width:100%;border-collapse:collapse;">
           <tbody id="tblBody"></tbody>
@@ -1126,6 +1137,82 @@ async function loadFromCloud(){
 }
 
 let _syncTimer=null;
+
+// ── 새로고침 (버튼 + Pull to Refresh 공용) ──
+let _isRefreshing=false;
+async function doRefresh(showIcon){
+  if(_isRefreshing)return;
+  _isRefreshing=true;
+  if(showIcon){
+    showIcon.classList.add('spinning');
+  }
+  try{
+    await loadFromCloud();
+    if(currentId){
+      // 현재 보고 있는 여행이 삭제됐는지 확인
+      const stillExists=getTrip(currentId);
+      if(!stillExists){
+        currentId=null;
+        showArchive();
+      } else {
+        renderAll();
+      }
+    } else {
+      renderArchive();
+    }
+  }catch(e){console.warn('새로고침 실패',e);}
+  finally{
+    _isRefreshing=false;
+    if(showIcon) setTimeout(()=>showIcon.classList.remove('spinning'),300);
+  }
+}
+
+// Pull to Refresh 구현
+function setupPullToRefresh(scrollElId, indicatorId){
+  const scrollEl=document.getElementById(scrollElId);
+  const indicator=document.getElementById(indicatorId);
+  if(!scrollEl||!indicator)return;
+  let startY=0, pulling=false, triggered=false;
+  scrollEl.addEventListener('touchstart',(e)=>{
+    if(scrollEl.scrollTop<=0){
+      startY=e.touches[0].clientY;
+      pulling=true;triggered=false;
+    }
+  },{passive:true});
+  scrollEl.addEventListener('touchmove',(e)=>{
+    if(!pulling)return;
+    const diff=e.touches[0].clientY-startY;
+    if(diff>0&&scrollEl.scrollTop<=0){
+      const dist=Math.min(diff,80);
+      indicator.classList.add('show');
+      if(dist>60&&!triggered){
+        triggered=true;
+        indicator.classList.add('spinning');
+        indicator.querySelector('span').textContent='새로고침 중...';
+        indicator.querySelector('i').className='ti ti-loader-2';
+      } else if(dist<=60&&triggered){
+        triggered=false;
+        indicator.classList.remove('spinning');
+        indicator.querySelector('span').textContent='당겨서 새로고침';
+        indicator.querySelector('i').className='ti ti-arrow-down';
+      }
+    }
+  },{passive:true});
+  scrollEl.addEventListener('touchend',async()=>{
+    if(pulling&&triggered){
+      await doRefresh();
+      indicator.querySelector('span').textContent='완료!';
+      setTimeout(()=>{
+        indicator.classList.remove('show','spinning');
+        indicator.querySelector('span').textContent='당겨서 새로고침';
+        indicator.querySelector('i').className='ti ti-arrow-down';
+      },500);
+    } else {
+      indicator.classList.remove('show');
+    }
+    pulling=false;triggered=false;
+  },{passive:true});
+}
 function scheduleSync(){
   clearTimeout(_syncTimer);
   _syncTimer=setTimeout(syncToCloud,1500);
@@ -1336,6 +1423,7 @@ function renderMobContent(){
   renderMobTable();
   if(mobTab==='tl') renderMobTimeline();
   if(mobTab==='cl') renderMobChecklist();
+  if(mobTab==='exp') renderExpenseTab();
   updateBadge();
 }
 
@@ -2453,6 +2541,7 @@ document.addEventListener('click',function(e){
 
   /* 플래너 헤더 */
   if(t.closest('#btnBackPlanner')){sessionStorage.removeItem('tpv5_current_trip');showPage('archivePage');renderArchive();return;}
+  if(t.closest('#btnRefreshTrip')){const btn=t.closest('#btnRefreshTrip');btn.classList.add('spinning');doRefresh(btn).then(()=>btn.classList.remove('spinning'));return;}
   if(t.closest('#saveBtn')){persist();const sb=document.getElementById('saveBtn');sb.innerHTML='<i class="ti ti-check"></i> 저장됨';sb.classList.add('saved');setTimeout(()=>{sb.innerHTML='<i class="ti ti-device-floppy"></i> 저장';sb.classList.remove('saved');},2000);return;}
 
   /* 날짜 탭 */
@@ -3752,6 +3841,10 @@ async function loadSharedTrip(shareId){
 }
 
 window.addEventListener('DOMContentLoaded',async()=>{
+  // Pull to Refresh 초기화
+  setupPullToRefresh('archivePage','ptrIndicatorArch');
+  setupPullToRefresh('mobPaneTable','ptrIndicatorTable');
+
   // 공유 링크 감지
   const urlParams=new URLSearchParams(location.search);
   const shareId=urlParams.get('share');
