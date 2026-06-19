@@ -2427,10 +2427,19 @@ document.addEventListener('click',function(e){
   if(delBtn){
     e.preventDefault();e.stopPropagation();
     const tid=delBtn.dataset.del;
+    console.log('[삭제] 클릭됨, tid=',tid,'현재 trips 개수=',trips.length);
     if(window.confirm('이 여행을 삭제할까요?')){
+      const beforeLen=trips.length;
       trips=trips.filter(tr=>tr.id!==tid);
+      console.log('[삭제] 필터 후 trips 개수=',trips.length,'(이전:',beforeLen,')');
       persist();
+      // 안전장치: 카드 DOM 즉시 제거
+      const cardEl=delBtn.closest('.trip-card');
+      if(cardEl) cardEl.remove();
       renderArchive();
+      console.log('[삭제] renderArchive 호출 완료');
+    } else {
+      console.log('[삭제] 사용자가 취소함');
     }
     return;
   }
