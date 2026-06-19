@@ -2396,8 +2396,6 @@ document.addEventListener('click',function(e){
   // 카테고리 아이콘 클릭
   const catEvt=t.closest('[data-catevt]');
   if(catEvt){e.stopPropagation();openCatSheet(catEvt.dataset.catevt,catEvt.dataset.catdk);return;}
-  // button 태그 onclick은 브라우저가 직접 처리 — 전역 핸들러 개입 안함
-  if(e.target.tagName==='BUTTON'&&e.target.onclick) return;
   // 위치 수정 버튼
   const locEvt=t.closest('[data-locevt]');
   if(locEvt){mobEditLocation(locEvt.dataset.locevt, locEvt.dataset.locdk);return;}
@@ -2425,7 +2423,17 @@ document.addEventListener('click',function(e){
     openModal('countryAddModal');return;
   }
   const tripCard=t.closest('.trip-card');if(tripCard&&!t.closest('.tc-del')&&!t.closest('.tc-act')){openTrip(tripCard.dataset.tid);return;}
-  const delBtn=t.closest('[data-del]');if(delBtn){e.stopPropagation();if(!confirm('이 여행을 삭제할까요?'))return;trips=trips.filter(tr=>tr.id!==delBtn.dataset.del);persist();renderArchive();return;}
+  const delBtn=t.closest('[data-del]');
+  if(delBtn){
+    e.preventDefault();e.stopPropagation();
+    const tid=delBtn.dataset.del;
+    if(window.confirm('이 여행을 삭제할까요?')){
+      trips=trips.filter(tr=>tr.id!==tid);
+      persist();
+      renderArchive();
+    }
+    return;
+  }
   const cCard=t.closest('.country-card');if(cCard&&!t.closest('[data-cdel]')){openCountryDetail(cCard.dataset.cid);return;}
   const cdel=t.closest('[data-cdel]');if(cdel){e.stopPropagation();if(!confirm('삭제할까요?'))return;countries=countries.filter(c=>c.id!==cdel.dataset.cdel);persistC();renderArchive();return;}
 
