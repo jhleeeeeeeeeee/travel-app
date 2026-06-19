@@ -864,7 +864,6 @@ table.sp td{overflow:hidden;}
         <label style="font-size:12px;color:var(--ink3);margin-bottom:6px;display:block;">기본 도시 선택 <span style="opacity:.6;">(Day별로 변경 가능)</span></label>
         <div id="ntCityGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;"></div>
       </div>
-      <div class="preview-name" id="ntPreview">여행 이름을 입력해주세요</div>
       <div class="gl-field">
         <label>여행 멤버 <span style="font-size:11px;color:var(--ink3);font-weight:400;">(선택 · 비용 분담 시 사용)</span></label>
         <div id="ntMemberWrap" style="display:flex;flex-wrap:wrap;align-items:center;gap:4px;border:1px solid var(--sand3);border-radius:10px;padding:8px 10px;min-height:44px;background:var(--sand);">
@@ -1126,6 +1125,25 @@ async function loadFromCloud(){
 }
 
 let _syncTimer=null;
+
+async function syncToCloud(){
+  try{
+    await sbFetch(`/rest/v1/user_data?id=eq.${SB_USER_ID}`,{
+      method:'PATCH',
+      headers:{'Prefer':'return=minimal'},
+      body:JSON.stringify({trips,countries,updated_at:new Date().toISOString()})
+    });
+    console.log('[Sync] 클라우드 저장 완료');
+  }catch(e){console.warn('[Sync] 클라우드 저장 실패',e);}
+}
+
+function scheduleSync(){
+  if(_syncTimer) clearTimeout(_syncTimer);
+  _syncTimer=setTimeout(()=>{
+    syncToCloud();
+    _syncTimer=null;
+  },1500);
+}
 
 let trips=JSON.parse(localStorage.getItem('tpv5_trips')||'[]');
 let countries=JSON.parse(localStorage.getItem('tpv5_countries')||'[]');
@@ -2545,7 +2563,7 @@ document.addEventListener('click',function(e){
 });
 
 document.addEventListener('input',function(e){
-  if(e.target.id==='ntName'){document.getElementById('ntPreview').textContent=e.target.value.trim()||'여행 이름을 입력해주세요';}
+  if(e.target.id==='ntName'){const _p=document.getElementById('ntPreview');if(_p)_p.textContent=e.target.value.trim()||'여행 이름을 입력해주세요';}
   if(e.target.id==='etName'){document.getElementById('etPreview').textContent=e.target.value.trim()||'';}
   if(e.target.id==='evtMap'){setLinkStatus(e.target.value.trim());}
 });
@@ -2998,7 +3016,7 @@ function ntSelectCity(city){
 function openNewTripModal(){
   _ntMembers = [];
   renderNtMembers();
-  document.getElementById('ntName').value='';document.getElementById('ntPreview').textContent='여행 이름을 입력해주세요';
+  document.getElementById('ntName').value='';const _p=document.getElementById('ntPreview');if(_p)_p.textContent='여행 이름을 입력해주세요';
   document.getElementById('ntCountry').value='';
   document.getElementById('ntCityWrap').style.display='none';
   _ntSelectedCity='';
