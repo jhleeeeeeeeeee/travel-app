@@ -2469,7 +2469,14 @@ document.addEventListener('click',function(e){
   }
 
   /* 플래너 헤더 */
-  if(t.closest('#btnBackPlanner')){sessionStorage.removeItem('tpv5_current_trip');showPage('archivePage');renderArchive();return;}
+  if(t.closest('#btnBackPlanner')){
+    sessionStorage.removeItem('tpv5_current_trip');
+    showPage('archivePage');
+    console.log('[목록으로] trips 개수:', trips.length, 'localStorage:', JSON.parse(localStorage.getItem('tpv5_trips')||'[]').length);
+    renderArchive();
+    console.log('[목록으로] renderArchive 완료, tripsGrid 카드 개수:', document.getElementById('tripsGrid').children.length);
+    return;
+  }
   if(t.closest('#saveBtn')){persist();const sb=document.getElementById('saveBtn');sb.innerHTML='<i class="ti ti-check"></i> 저장됨';sb.classList.add('saved');setTimeout(()=>{sb.innerHTML='<i class="ti ti-device-floppy"></i> 저장';sb.classList.remove('saved');},2000);return;}
 
   /* 날짜 탭 */
@@ -3049,7 +3056,15 @@ function createTrip(){
   const trip={id:String(Date.now()),name,start:s,end:e,color:selColor,country:countryVal,dayCity:{},members:[..._ntMembers],events:{}};
   // 모든 날짜에 기본 도시 설정
   if(_ntSelectedCity){genDays(s,e).forEach(d=>{trip.dayCity[d]=_ntSelectedCity;});}
-  genDays(s,e).forEach(d=>{trip.events[d]=[];});trips.push(trip);persist();closeModal('newTripModal');renderArchive();openTrip(trip.id);
+  genDays(s,e).forEach(d=>{trip.events[d]=[];});
+  trips.push(trip);
+  console.log('[새여행] push 후 trips 개수:', trips.length, 'localStorage 저장 전');
+  persist();
+  console.log('[새여행] persist 완료, localStorage 확인:', JSON.parse(localStorage.getItem('tpv5_trips')||'[]').length, '개');
+  closeModal('newTripModal');
+  renderArchive();
+  console.log('[새여행] renderArchive 완료, tripsGrid 카드 개수:', document.getElementById('tripsGrid').children.length);
+  openTrip(trip.id);
 }
 
 /* ── Day별 도시 & 날씨 ── */
