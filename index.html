@@ -1760,6 +1760,7 @@ function goTripCountryInfo(){
   const trip=getTrip(currentId); if(!trip||!trip.country) return;
   // 국가 정보 페이지로 이동하면서 해당 국가 선택
   sessionStorage.setItem('tpv5_ci_country',trip.country);
+  sessionStorage.setItem('tpv5_ci_from','plannerPage'); // 여행 화면에서 왔음을 기록
   openCountryInfoPage(trip.country);
 }
 function renderMobTimelineChecklist(){
@@ -2367,10 +2368,18 @@ document.addEventListener('click',function(e){
   const popup=document.getElementById('timePopup');
   if(popup&&!popup.contains(t)){const cell=_tp&&_tp.el;if(!cell||!cell.contains(t))closeTimePopup();}
 
-  if(t.closest('#btnGoCountryInfo')){openCountryInfoPage();return;}
+  if(t.closest('#btnGoCountryInfo')){sessionStorage.setItem('tpv5_ci_from','archivePage');openCountryInfoPage();return;}
   if(t.closest('#btnBackCountryInfo')){
     sessionStorage.removeItem('tpv5_ci_country');
-    showPage('archivePage');renderArchive();return;
+    const from=sessionStorage.getItem('tpv5_ci_from');
+    sessionStorage.removeItem('tpv5_ci_from');
+    if(from==='plannerPage'&&currentId){
+      showPage('plannerPage');
+      renderAll();
+    } else {
+      showPage('archivePage');renderArchive();
+    }
+    return;
   }
 
   // 여행 편집
