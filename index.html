@@ -968,19 +968,24 @@ table.sp td{overflow:hidden;}
           <div onclick="setEvtCurrency('KRW')" id="evtCurKRW" style="display:flex;align-items:center;gap:5px;padding:8px 14px;border-radius:10px;border:1.5px solid #C85A2A;background:#FDF0EA;color:#C85A2A;font-size:13px;font-weight:500;cursor:pointer;flex:1;justify-content:center;">
             ₩ KRW <i class="ti ti-check" style="font-size:12px;" aria-hidden="true"></i>
           </div>
-          <div onclick="setEvtCurrency('LOCAL')" id="evtCurLocal" style="display:flex;align-items:center;gap:5px;padding:8px 14px;border-radius:10px;border:1.5px solid #E0D8D0;background:#fff;color:#9A8E7A;font-size:13px;font-weight:500;cursor:pointer;flex:1;justify-content:center;" id="evtCurLocalBtn">
+          <div onclick="setEvtCurrency('LOCAL')" id="evtCurLocal" style="display:flex;align-items:center;gap:5px;padding:8px 14px;border-radius:10px;border:1.5px solid #E0D8D0;background:#fff;color:#9A8E7A;font-size:13px;font-weight:500;cursor:pointer;flex:1;justify-content:center;">
             <span id="evtLocalSymbol">€</span> <span id="evtLocalCode">EUR</span>
           </div>
         </div>
-        <input type="number" id="evtCost" placeholder="0" min="0" inputmode="numeric" oninput="onEvtCostInput()" style="width:100%;box-sizing:border-box;">
-        <div id="evtCostConvert" style="display:none;margin-top:6px;font-size:11px;color:#9A8E7A;display:flex;align-items:center;gap:4px;">
+        <div style="display:flex;gap:10px;">
+          <input type="text" id="evtCost" placeholder="0" inputmode="numeric" oninput="onEvtCostInput()" style="flex:1;width:50%;box-sizing:border-box;">
+          <div id="evtPayerDropdownWrap" style="flex:1;width:50%;position:relative;">
+            <div id="evtPayerDropdown" onclick="event.stopPropagation();toggleEvtPayerDropdown()" style="padding:11px 12px;border-radius:10px;border:1px solid var(--sand3);background:var(--white);font-size:14px;color:var(--ink3);display:flex;align-items:center;justify-content:space-between;cursor:pointer;height:100%;box-sizing:border-box;">
+              <span id="evtPayerDropdownLabel" style="display:flex;align-items:center;gap:6px;"><i class="ti ti-user" style="font-size:14px;" aria-hidden="true"></i>결제자 선택</span>
+              <i class="ti ti-chevron-down" style="font-size:13px;" aria-hidden="true"></i>
+            </div>
+            <div id="evtPayerDropdownList" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--white);border-radius:10px;border:1px solid var(--sand3);overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,.1);margin-top:4px;z-index:50;"></div>
+          </div>
+        </div>
+        <div id="evtCostConvert" style="display:none;margin-top:6px;font-size:11px;color:#9A8E7A;align-items:center;gap:4px;">
           <i class="ti ti-arrows-exchange" style="font-size:12px;" aria-hidden="true"></i>
           <span id="evtCostConvertTxt"></span>
         </div>
-      </div>
-      <div class="gl-field" id="evtPayerField" style="display:none;">
-        <label>결제자</label>
-        <div id="evtPayerGrid" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
       </div>
       <div class="gl-field"><label>이동수단</label>
           <select id="evtTransport"><option>—</option><option>도보</option><option>버스</option><option>지하철</option><option>택시/우버</option><option>자차</option><option>렌터카</option><option>기차</option><option>비행기</option><option>배/선박</option></select>
@@ -1465,9 +1470,19 @@ function mobStartEdit(id,field){
   },60);
 }
 
+function mobFmtCostInput(inp){
+  const cur=inp.dataset.cur;
+  const raw=parseCostInput(inp.value);
+  if(raw>0){
+    inp.value = cur==='KRW' ? fmtCost(raw) : fmtLocal(raw);
+  } else {
+    inp.value = inp.value.replace(/[^0-9.]/g,'');
+  }
+}
+
 function mobSaveCostField(inp){
   const evId=inp.dataset.eid, dk=inp.dataset.edk, cur=inp.dataset.cur;
-  const val=Number(inp.value)||0;
+  const val=parseCostInput(inp.value);
   const trip=getTrip(currentId);
   const ev=(trip.events[dk]||[]).find(r=>r.id===evId);
   if(!ev)return;
@@ -1667,7 +1682,7 @@ function renderMobTable(){
               const _mainAmt=_isKRW?(r.cost?fmtCost(r.cost):'0'):(r.costLocal?fmtLocal(r.costLocal):'0');
               const _mainSym=_isKRW?'₩':(curSym);
               const _mainField=_editVal
-                ?`<input id="mobFldInp_${_eid}_costMain" data-eid="${_eid}" data-edk="${_edk}" data-cur="${_dCur}" type="number" step="${_isKRW?'1':'0.01'}" value="${_isKRW?(r.cost||0):(r.costLocal||0)}" onchange="mobSaveCostField(this)" onclick="event.stopPropagation()" style="font-size:15px;font-weight:500;border:none;border-bottom:1.5px solid var(--terra);outline:none;background:transparent;width:120px;font-family:var(--font-sans);color:var(--ink);" autofocus>`
+                ?`<input id="mobFldInp_${_eid}_costMain" data-eid="${_eid}" data-edk="${_edk}" data-cur="${_dCur}" type="text" inputmode="numeric" value="${_isKRW?(r.cost?fmtCost(r.cost):''):(r.costLocal?fmtLocal(r.costLocal):'')}" oninput="mobFmtCostInput(this)" onchange="mobSaveCostField(this)" onclick="event.stopPropagation()" style="font-size:15px;font-weight:500;border:none;border-bottom:1.5px solid var(--terra);outline:none;background:transparent;width:120px;font-family:var(--font-sans);color:var(--ink);" autofocus>`
                 :`<span onclick="event.stopPropagation();window._mobEditField={id:'${_eid}',field:'costMain'};renderMobTable();" style="cursor:pointer;font-size:15px;font-weight:500;color:var(--ink);border-bottom:1px dashed var(--sand3);">${_mainSym}${_mainAmt}</span>`;
               // 반대쪽 환산 표시
               const _subAmt=_isKRW
@@ -2217,10 +2232,10 @@ function openEvtModal(dk,time,isEdit,evId){
     initEvtCurrency();
     if(ev.costCurrency && ev.costCurrency!=='KRW'){
       setEvtCurrency('LOCAL');
-      document.getElementById('evtCost').value=ev.costLocal||'';
+      document.getElementById('evtCost').value=ev.costLocal?fmtLocal(ev.costLocal):'';
     } else {
       setEvtCurrency('KRW');
-      document.getElementById('evtCost').value=ev.cost||'';
+      document.getElementById('evtCost').value=ev.cost?fmtCost(ev.cost):'';
     }
   } else {
     ['evtTitle','evtCost','evtNote','evtMap','mapQ'].forEach(x=>document.getElementById(x).value='');
@@ -2259,7 +2274,7 @@ function selCat(cat){
 function saveEvt(){
   const title=document.getElementById('evtTitle').value.trim();if(!title){alert('내용을 입력해주세요.');return;}
   const startTime=document.getElementById('evtStart').value,endTime=document.getElementById('evtEnd').value;
-  const rawCost=Number(document.getElementById('evtCost').value)||0;
+  const rawCost=parseCostInput(document.getElementById('evtCost').value);
   const transport=document.getElementById('evtTransport').value;
   const note=document.getElementById('evtNote').value.trim(),location=document.getElementById('evtMap').value.trim();
   // 통화 처리
@@ -2434,22 +2449,19 @@ document.addEventListener('click',function(e){
   const costEvt=t.closest('[data-costevt]');
   if(costEvt){e.stopPropagation();mobToggleCostCurrency(costEvt.dataset.costevt,costEvt.dataset.costdk);return;}
   // 카테고리 아이콘 클릭
-  // 일정 등록 모달 결제자 선택
-  const evtPayerChip=t.closest('[data-evtpayer]');
-  if(evtPayerChip){
-    window._evtSelectedPayer = evtPayerChip.dataset.evtpayer;
-    const payerGrid=document.getElementById('evtPayerGrid');
-    if(payerGrid){
-      const trip=getTrip(currentId);
-      const members=trip?.members||[];
-      const colors=['#2A6B7C','#5A7A5A','#C85A2A','#C8A84B','#6B4FA0','#6B6550'];
-      payerGrid.innerHTML=members.map((m,i)=>{
-        const c=colors[i%colors.length];
-        const sel=window._evtSelectedPayer===m;
-        return `<div data-evtpayer="${m}" style="padding:8px 14px;border-radius:10px;border:1.5px solid ${sel?c:'#E0D8D0'};background:${sel?c+'18':'#fff'};color:${sel?c:'#9A8E7A'};font-size:13px;font-weight:500;cursor:pointer;">${m}</div>`;
-      }).join('');
-    }
+  // 일정 등록 모달 결제자 드롭다운 선택
+  const evtPayerSel=t.closest('[data-evtpayersel]');
+  if(evtPayerSel){
+    window._evtSelectedPayer = evtPayerSel.dataset.evtpayersel;
+    renderEvtPayerDropdown();
+    const list=document.getElementById('evtPayerDropdownList');
+    if(list) list.style.display='none';
     return;
+  }
+  // 드롭다운 바깥 클릭 시 닫기
+  if(!t.closest('#evtPayerDropdownWrap')){
+    const list=document.getElementById('evtPayerDropdownList');
+    if(list && list.style.display==='block') list.style.display='none';
   }
   // 세부지출 Day별/전체 토글
   const expViewBtn=t.closest('[data-expview]');
@@ -2975,22 +2987,47 @@ function initEvtCurrency(){
   if(_evtLocalCur !== 'KRW'){
     getRate(_evtLocalCur).then(r => { if(r) _evtLocalRate = r; });
   }
-  // 결제자 선택 UI 렌더링
+  // 결제자 드롭다운 렌더링
+  renderEvtPayerDropdown();
+}
+
+function renderEvtPayerDropdown(){
+  const trip = getTrip(currentId);
   const members = trip?.members || [];
-  const payerField = document.getElementById('evtPayerField');
-  const payerGrid = document.getElementById('evtPayerGrid');
-  if(members.length && payerField && payerGrid){
-    payerField.style.display = 'block';
-    const colors = ['#2A6B7C','#5A7A5A','#C85A2A','#C8A84B','#6B4FA0','#6B6550'];
-    window._evtSelectedPayer = window._evtSelectedPayer || '';
-    payerGrid.innerHTML = members.map((m,i) => {
-      const c = colors[i % colors.length];
-      const sel = window._evtSelectedPayer === m;
-      return `<div data-evtpayer="${m}" style="padding:8px 14px;border-radius:10px;border:1.5px solid ${sel?c:'#E0D8D0'};background:${sel?c+'18':'#fff'};color:${sel?c:'#9A8E7A'};font-size:13px;font-weight:500;cursor:pointer;">${m}</div>`;
-    }).join('');
-  } else if(payerField){
-    payerField.style.display = 'none';
+  const wrap = document.getElementById('evtPayerDropdownWrap');
+  const label = document.getElementById('evtPayerDropdownLabel');
+  const list = document.getElementById('evtPayerDropdownList');
+  if(!wrap) return;
+  if(!members.length){
+    wrap.style.display = 'none';
+    return;
   }
+  wrap.style.display = 'block';
+  const colors = ['#2A6B7C','#5A7A5A','#C85A2A','#C8A84B','#6B4FA0','#6B6550'];
+  const sel = window._evtSelectedPayer || '';
+  const selIdx = members.indexOf(sel);
+  const selColor = selIdx >= 0 ? colors[selIdx % colors.length] : null;
+  if(label){
+    label.innerHTML = sel
+      ? `<i class="ti ti-user" style="font-size:14px;"></i>${sel}`
+      : `<i class="ti ti-user" style="font-size:14px;"></i>결제자 선택`;
+    label.style.color = selColor || 'var(--ink3)';
+  }
+  const dd = document.getElementById('evtPayerDropdown');
+  if(dd) dd.style.borderColor = selColor || 'var(--sand3)';
+  if(list){
+    list.innerHTML = members.map((m,i) => {
+      const c = colors[i % colors.length];
+      const isSel = m === sel;
+      return `<div data-evtpayersel="${m}" style="padding:10px 12px;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;border-top:0.5px solid var(--sand2);background:${isSel?c+'18':'var(--white)'};color:${isSel?c:'var(--ink)'};font-weight:${isSel?'500':'400'};">${isSel?'<i class="ti ti-check" style="font-size:13px;"></i>':''}${m}</div>`;
+    }).join('');
+  }
+}
+
+function toggleEvtPayerDropdown(){
+  const list = document.getElementById('evtPayerDropdownList');
+  if(!list) return;
+  list.style.display = list.style.display === 'block' ? 'none' : 'block';
 }
 
 function setEvtCurrency(mode){
@@ -3013,8 +3050,19 @@ function setEvtCurrency(mode){
   if(conv) conv.style.display = 'none';
 }
 
+function parseCostInput(val){
+  return Number(String(val).replace(/,/g,'').replace(/[^0-9.]/g,'')) || 0;
+}
+
 async function onEvtCostInput(){
-  const val = Number(document.getElementById('evtCost').value) || 0;
+  const inp = document.getElementById('evtCost');
+  // 천단위 쉼표 자동 포맷 (커서 위치 보존)
+  const raw = parseCostInput(inp.value);
+  const isDecimal = _evtCurMode === 'LOCAL';
+  const formatted = isDecimal ? fmtLocal(raw) : fmtCost(raw);
+  if(raw>0) inp.value = formatted; else inp.value = inp.value.replace(/[^0-9.]/g,'');
+
+  const val = raw;
   if(!val || _evtLocalCur === 'KRW') return;
   const convertEl = document.getElementById('evtCostConvert');
   const txtEl = document.getElementById('evtCostConvertTxt');
