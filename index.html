@@ -626,10 +626,12 @@ table.sp td{overflow:hidden;}
         <div style="padding:7px 8px;display:flex;flex-direction:column;align-items:center;justify-content:center;border-right:0.5px solid var(--sand2);">
           <span style="font-size:10px;color:var(--ink3);white-space:nowrap;">오늘 비용</span>
           <span id="tibDayCost" style="font-size:11px;font-weight:500;color:var(--terra);white-space:nowrap;">—</span>
+          <span id="tibDayCostLocal" style="display:none;font-size:11px;font-weight:500;color:var(--terra);white-space:nowrap;">—</span>
         </div>
         <div style="padding:7px 8px;display:flex;flex-direction:column;align-items:center;justify-content:center;border-right:0.5px solid var(--sand2);">
           <span style="font-size:10px;color:var(--ink3);white-space:nowrap;">전체 일정 비용</span>
           <span id="tibTotalCost" style="font-size:11px;font-weight:500;color:var(--ink);white-space:nowrap;">—</span>
+          <span id="tibTotalCostLocal" style="display:none;font-size:11px;font-weight:500;color:var(--ink);white-space:nowrap;">—</span>
         </div>
         <div onclick="goTripCountryInfo()" style="padding:7px 12px;display:flex;align-items:center;gap:4px;cursor:pointer;color:var(--terra);-webkit-tap-highlight-color:transparent;flex-shrink:0;">
           <i class="ti ti-info-circle" style="font-size:15px;"></i>
@@ -1302,9 +1304,25 @@ function renderSummary(){
   const tc=document.getElementById('tibTodayCount');
   const dc=document.getElementById('tibDayCost');
   const gc=document.getElementById('tibTotalCost');
+  const dcLocal=document.getElementById('tibDayCostLocal');
+  const gcLocal=document.getElementById('tibTotalCostLocal');
   if(tc) tc.textContent=evts.length+'개';
   if(dc) dc.textContent='₩'+fmtCost(dayTotal);
   if(gc) gc.textContent='₩'+fmtCost(grand);
+
+  const parts=(trip.country||'').split('|');
+  const localCur=parts[2]||'KRW';
+  if(localCur!=='KRW'){
+    getRate(localCur).then(rate=>{
+      if(!rate)return;
+      const sym=getCurSymbol(localCur);
+      if(dcLocal){dcLocal.textContent=sym+fmtLocal(dayTotal/rate);dcLocal.style.display='block';}
+      if(gcLocal){gcLocal.textContent=sym+fmtLocal(grand/rate);gcLocal.style.display='block';}
+    });
+  } else {
+    if(dcLocal)dcLocal.style.display='none';
+    if(gcLocal)gcLocal.style.display='none';
+  }
 }
 
 /* ── 도시 여정 바 ── */
@@ -1614,13 +1632,14 @@ function renderMobTable(){
             <div data-catevt="${r.id}" data-catdk="${activeDayKey}" style="width:38px;height:38px;border-radius:12px;background:${catIconBg};display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;cursor:pointer;-webkit-tap-highlight-color:transparent;">${cat.emoji}</div>
             <div style="flex:1;min-width:0;">
               <div style="font-size:14px;font-weight:500;color:#1A1A2E;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(r.content)||'내용 없음'}</div>
-              <div style="display:flex;align-items:center;gap:6px;margin-top:4px;">
+              <div style="display:flex;align-items:center;gap:6px;margin-top:4px;flex-wrap:wrap;">
                 <span style="font-size:10px;padding:2px 8px;border-radius:999px;background:${catBadgeBg};color:#fff;font-weight:500;">${catLabel}</span>
                 <div class="mob-card-time" data-tc="${r.id}" data-dk="${activeDayKey}"
                   style="font-size:11px;color:#999;display:inline-flex;align-items:center;gap:3px;cursor:pointer;-webkit-tap-highlight-color:transparent;"
                   onclick="event.stopPropagation();openTimePopup('${r.id}','${activeDayKey}',this)">
                   <i class="ti ti-clock" style="font-size:10px;"></i> ${timeDisp}
                 </div>
+                ${(r.cost||r.costLocal)?`<span style="font-size:11px;color:var(--terra);font-weight:500;white-space:nowrap;">${r.cost?'₩'+fmtCost(r.cost):''}${r.costLocal&&r.costCurrency&&r.costCurrency!=='KRW'?(r.cost?' · ':'')+getCurSymbol(r.costCurrency)+fmtLocal(r.costLocal):''}</span>`:''}
               </div>
             </div>
             <i class="ti ti-chevron-${isExpanded?'up':'down'}" style="font-size:15px;color:#CCC;flex-shrink:0;"></i>
