@@ -428,7 +428,8 @@ table.sp td{overflow:hidden;}
       </div>
     </div>
     <div class="sec-label">저장된 여행</div>
-    <div class="trips-grid" id="tripsGrid"><div class="empty-arch" id="emptyMsg"><i class="ti ti-map-off"></i><p>아직 저장된 여행이 없습니다.</p></div></div>
+    <div class="empty-arch" id="emptyMsg"><i class="ti ti-map-off"></i><p>아직 저장된 여행이 없습니다.</p></div>
+    <div class="trips-grid" id="tripsGrid"></div>
   </div>
 </div>
 
@@ -1229,8 +1230,8 @@ function persistCl(){persist();}
 /* ══ ARCHIVE ══ */
 function renderArchive(){
   const grid=document.getElementById('tripsGrid'),empty=document.getElementById('emptyMsg');
-  if(!trips.length){grid.innerHTML='';grid.appendChild(empty);empty.classList.remove('hidden');return;}
-  empty.classList.add('hidden');
+  if(!trips.length){grid.innerHTML='';if(empty)empty.classList.remove('hidden');return;}
+  if(empty)empty.classList.add('hidden');
   grid.innerHTML=trips.map(t=>{
     const evts=allEvts(t),total=evts.reduce((a,v)=>a+(Number(v.cost)||0),0);
     return `<div class="trip-card" data-tid="${t.id}">
@@ -2427,19 +2428,10 @@ document.addEventListener('click',function(e){
   if(delBtn){
     e.preventDefault();e.stopPropagation();
     const tid=delBtn.dataset.del;
-    console.log('[삭제] 클릭됨, tid=',tid,'현재 trips 개수=',trips.length);
     if(window.confirm('이 여행을 삭제할까요?')){
-      const beforeLen=trips.length;
       trips=trips.filter(tr=>tr.id!==tid);
-      console.log('[삭제] 필터 후 trips 개수=',trips.length,'(이전:',beforeLen,')');
       persist();
-      // 안전장치: 카드 DOM 즉시 제거
-      const cardEl=delBtn.closest('.trip-card');
-      if(cardEl) cardEl.remove();
       renderArchive();
-      console.log('[삭제] renderArchive 호출 완료');
-    } else {
-      console.log('[삭제] 사용자가 취소함');
     }
     return;
   }
@@ -2472,9 +2464,7 @@ document.addEventListener('click',function(e){
   if(t.closest('#btnBackPlanner')){
     sessionStorage.removeItem('tpv5_current_trip');
     showPage('archivePage');
-    console.log('[목록으로] trips 개수:', trips.length, 'localStorage:', JSON.parse(localStorage.getItem('tpv5_trips')||'[]').length);
     renderArchive();
-    console.log('[목록으로] renderArchive 완료, tripsGrid 카드 개수:', document.getElementById('tripsGrid').children.length);
     return;
   }
   if(t.closest('#saveBtn')){persist();const sb=document.getElementById('saveBtn');sb.innerHTML='<i class="ti ti-check"></i> 저장됨';sb.classList.add('saved');setTimeout(()=>{sb.innerHTML='<i class="ti ti-device-floppy"></i> 저장';sb.classList.remove('saved');},2000);return;}
@@ -3058,12 +3048,9 @@ function createTrip(){
   if(_ntSelectedCity){genDays(s,e).forEach(d=>{trip.dayCity[d]=_ntSelectedCity;});}
   genDays(s,e).forEach(d=>{trip.events[d]=[];});
   trips.push(trip);
-  console.log('[새여행] push 후 trips 개수:', trips.length, 'localStorage 저장 전');
   persist();
-  console.log('[새여행] persist 완료, localStorage 확인:', JSON.parse(localStorage.getItem('tpv5_trips')||'[]').length, '개');
   closeModal('newTripModal');
   renderArchive();
-  console.log('[새여행] renderArchive 완료, tripsGrid 카드 개수:', document.getElementById('tripsGrid').children.length);
   openTrip(trip.id);
 }
 
