@@ -978,6 +978,10 @@ table.sp td{overflow:hidden;}
           <span id="evtCostConvertTxt"></span>
         </div>
       </div>
+      <div class="gl-field" id="evtPayerField" style="display:none;">
+        <label>결제자</label>
+        <div id="evtPayerGrid" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
+      </div>
       <div class="gl-field"><label>이동수단</label>
           <select id="evtTransport"><option>—</option><option>도보</option><option>버스</option><option>지하철</option><option>택시/우버</option><option>자차</option><option>렌터카</option><option>기차</option><option>비행기</option><option>배/선박</option></select>
       </div>
@@ -2208,6 +2212,7 @@ function openEvtModal(dk,time,isEdit,evId){
     document.getElementById('evtMap').value=ev.location||'';document.getElementById('mapQ').value='';
     document.getElementById('urlBox').style.display='none';setLinkStatus(ev.location||'');
     populatePickers(ev.startTime||ev.time||'09:00',ev.endTime||'');selCat(ev.cat||'etc');
+    window._evtSelectedPayer=ev.payer||'';
     // 통화 초기화 후 기존값 세팅
     initEvtCurrency();
     if(ev.costCurrency && ev.costCurrency!=='KRW'){
@@ -2221,6 +2226,7 @@ function openEvtModal(dk,time,isEdit,evId){
     ['evtTitle','evtCost','evtNote','evtMap','mapQ'].forEach(x=>document.getElementById(x).value='');
     document.getElementById('evtTransport').value='—';document.getElementById('urlBox').style.display='none';
     setLinkStatus('');populatePickers(time||'09:00','');selCat('etc');
+    window._evtSelectedPayer='';
     initEvtCurrency();
   }
   openModal('evtModal');
@@ -2269,11 +2275,13 @@ function saveEvt(){
     costCurrency = _evtLocalCur;
     if(_evtLocalRate) cost = Math.round(rawCost * _evtLocalRate);
   }
+  const payer=window._evtSelectedPayer||'';
   const trip=getTrip(currentId);if(!trip.events[pendingDayKey])trip.events[pendingDayKey]=[];
   let savedId=editEvtId;
-  if(editEvtId){const idx=trip.events[pendingDayKey].findIndex(e=>e.id===editEvtId);if(idx>=0)Object.assign(trip.events[pendingDayKey][idx],{cat:selCatV,content:title,time:startTime,startTime,endTime,cost,costLocal,costCurrency,transport,note,location});}
-  else{const nr={id:uid(),cat:selCatV,content:title,time:startTime,startTime,endTime,cost,costLocal,costCurrency,transport,note,location};trip.events[pendingDayKey].push(nr);savedId=nr.id;}
+  if(editEvtId){const idx=trip.events[pendingDayKey].findIndex(e=>e.id===editEvtId);if(idx>=0)Object.assign(trip.events[pendingDayKey][idx],{cat:selCatV,content:title,time:startTime,startTime,endTime,cost,costLocal,costCurrency,payer,transport,note,location});}
+  else{const nr={id:uid(),cat:selCatV,content:title,time:startTime,startTime,endTime,cost,costLocal,costCurrency,payer,transport,note,location};trip.events[pendingDayKey].push(nr);savedId=nr.id;}
   persist();closeModal('evtModal');
+  window._evtSelectedPayer='';
   // 저장된 일정 펼쳐서 보여주기
   window._mobExpandedId=savedId;
   renderAll();
@@ -2426,6 +2434,23 @@ document.addEventListener('click',function(e){
   const costEvt=t.closest('[data-costevt]');
   if(costEvt){e.stopPropagation();mobToggleCostCurrency(costEvt.dataset.costevt,costEvt.dataset.costdk);return;}
   // 카테고리 아이콘 클릭
+  // 일정 등록 모달 결제자 선택
+  const evtPayerChip=t.closest('[data-evtpayer]');
+  if(evtPayerChip){
+    window._evtSelectedPayer = evtPayerChip.dataset.evtpayer;
+    const payerGrid=document.getElementById('evtPayerGrid');
+    if(payerGrid){
+      const trip=getTrip(currentId);
+      const members=trip?.members||[];
+      const colors=['#2A6B7C','#5A7A5A','#C85A2A','#C8A84B','#6B4FA0','#6B6550'];
+      payerGrid.innerHTML=members.map((m,i)=>{
+        const c=colors[i%colors.length];
+        const sel=window._evtSelectedPayer===m;
+        return `<div data-evtpayer="${m}" style="padding:8px 14px;border-radius:10px;border:1.5px solid ${sel?c:'#E0D8D0'};background:${sel?c+'18':'#fff'};color:${sel?c:'#9A8E7A'};font-size:13px;font-weight:500;cursor:pointer;">${m}</div>`;
+      }).join('');
+    }
+    return;
+  }
   // 세부지출 Day별/전체 토글
   const expViewBtn=t.closest('[data-expview]');
   if(expViewBtn){window._expViewMode=expViewBtn.dataset.expview;renderExpenseTab();return;}
@@ -2949,6 +2974,22 @@ function initEvtCurrency(){
   // 환율 미리 가져오기
   if(_evtLocalCur !== 'KRW'){
     getRate(_evtLocalCur).then(r => { if(r) _evtLocalRate = r; });
+  }
+  // 결제자 선택 UI 렌더링
+  const members = trip?.members || [];
+  const payerField = document.getElementById('evtPayerField');
+  const payerGrid = document.getElementById('evtPayerGrid');
+  if(members.length && payerField && payerGrid){
+    payerField.style.display = 'block';
+    const colors = ['#2A6B7C','#5A7A5A','#C85A2A','#C8A84B','#6B4FA0','#6B6550'];
+    window._evtSelectedPayer = window._evtSelectedPayer || '';
+    payerGrid.innerHTML = members.map((m,i) => {
+      const c = colors[i % colors.length];
+      const sel = window._evtSelectedPayer === m;
+      return `<div data-evtpayer="${m}" style="padding:8px 14px;border-radius:10px;border:1.5px solid ${sel?c:'#E0D8D0'};background:${sel?c+'18':'#fff'};color:${sel?c:'#9A8E7A'};font-size:13px;font-weight:500;cursor:pointer;">${m}</div>`;
+    }).join('');
+  } else if(payerField){
+    payerField.style.display = 'none';
   }
 }
 
