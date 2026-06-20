@@ -2395,6 +2395,9 @@ document.addEventListener('click',function(e){
   const costEvt=t.closest('[data-costevt]');
   if(costEvt){e.stopPropagation();mobToggleCostCurrency(costEvt.dataset.costevt,costEvt.dataset.costdk);return;}
   // 카테고리 아이콘 클릭
+  // 세부지출 Day별/전체 토글
+  const expViewBtn=t.closest('[data-expview]');
+  if(expViewBtn){window._expViewMode=expViewBtn.dataset.expview;renderExpenseTab();return;}
   const catEvt=t.closest('[data-catevt]');
   if(catEvt){e.stopPropagation();openCatSheet(catEvt.dataset.catevt,catEvt.dataset.catdk);return;}
   // 위치 수정 버튼
@@ -2755,8 +2758,9 @@ function renderExpenseTab(){
   const localCur = parts[2] || 'KRW';
   const localSymbol = getCurSymbol(localCur);
   const members = trip.members || [];
-  const allEvts = Object.values(trip.events||{}).flat();
-  const dayEvts = trip.events[activeDayKey] || [];
+  const isAll = window._expViewMode === 'all';
+  const dayKeys = Object.keys(trip.events||{}).sort();
+  const dayEvts = isAll ? Object.values(trip.events||{}).flat() : (trip.events[activeDayKey] || []);
 
   // 원화/현지화 합계 - 실제 등록된 통화 기준
   let krwTotal = 0, localTotal = 0;
@@ -2785,8 +2789,16 @@ function renderExpenseTab(){
 
   const colors = ['#2A6B7C','#5A7A5A','#C85A2A','#C8A84B','#6B4FA0','#6B6550'];
 
-  let html = `<div style="background:var(--white);padding:12px 14px;border-bottom:0.5px solid var(--sand2);">
-    <div style="font-size:12px;color:var(--ink3);margin-bottom:8px;">Day ${Object.keys(trip.events||{}).sort().indexOf(activeDayKey)+1} 총 지출</div>
+  // 토글 바
+  let html = `<div style="display:flex;background:var(--white);border-bottom:0.5px solid var(--sand2);padding:4px;gap:4px;">
+    <div data-expview="day" style="flex:1;text-align:center;padding:8px;border-radius:8px;font-size:12px;font-weight:500;cursor:pointer;${!isAll?'background:var(--terra);color:#fff;':'color:var(--ink3);'}">Day별</div>
+    <div data-expview="all" style="flex:1;text-align:center;padding:8px;border-radius:8px;font-size:12px;font-weight:500;cursor:pointer;${isAll?'background:var(--terra);color:#fff;':'color:var(--ink3);'}">전체 일정</div>
+  </div>`;
+
+  const titleLabel = isAll ? `전체 일정 (${fmtRange(trip.start,trip.end)}) 총 지출` : `Day ${dayKeys.indexOf(activeDayKey)+1} 총 지출`;
+
+  html += `<div style="background:var(--white);padding:12px 14px;border-bottom:0.5px solid var(--sand2);">
+    <div style="font-size:12px;color:var(--ink3);margin-bottom:8px;">${titleLabel}</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
       <div style="background:var(--sand);border-radius:10px;padding:8px 10px;">
         <div style="font-size:10px;color:var(--ink3);">KRW 합계</div>
@@ -2799,7 +2811,7 @@ function renderExpenseTab(){
     </div>`;
 
   if(members.length){
-    html += `<div style="font-size:11px;color:var(--ink3);margin-bottom:6px;">인별 지출</div>`;
+    html += `<div style="font-size:11px;color:var(--ink3);margin-bottom:6px;">인별 지출${isAll?' (전체 기간)':''}</div>`;
     members.forEach((m,i) => {
       const c = colors[i % colors.length];
       const d = byPayer[m] || {krw:0,local:0};
@@ -2819,11 +2831,24 @@ function renderExpenseTab(){
   html += `</div>`;
 
   // 지출 내역
-  html += `<div style="padding:6px 14px 2px;font-size:11px;font-weight:500;color:var(--ink3);">지출 내역</div>`;
-  if(!dayEvts.filter(e => e.cost||e.costLocal).length){
+  html += `<div style="padding:6px 14px 2px;font-size:11px;font-weight:500;color:var(--ink3);">지출 내역${isAll?' (전체)':''}</div>`;
+
+  // 전체 보기일 땐 각 일정에 Day 정보를 같이 가지고 있어야 함
+  let listItems = [];
+  if(isAll){
+    dayKeys.forEach((dk,dIdx) => {
+      (trip.events[dk]||[]).filter(e=>e.cost||e.costLocal).forEach(ev=>{
+        listItems.push({ev, dayLabel: 'Day '+(dIdx+1)});
+      });
+    });
+  } else {
+    dayEvts.filter(e=>e.cost||e.costLocal).forEach(ev=>{ listItems.push({ev, dayLabel:null}); });
+  }
+
+  if(!listItems.length){
     html += `<div style="padding:20px;text-align:center;color:var(--ink3);font-size:13px;">지출 내역이 없어요</div>`;
   } else {
-    dayEvts.filter(e => e.cost||e.costLocal).forEach(ev => {
+    listItems.forEach(({ev,dayLabel}) => {
       const cat = CATS[ev.cat]||CATS.etc;
       const payer = ev.payer || '';
       const pi = members.indexOf(payer);
@@ -2832,7 +2857,10 @@ function renderExpenseTab(){
         <div style="width:10px;height:10px;border-radius:50%;background:${cat.color};flex-shrink:0;"></div>
         <div style="flex:1;">
           <div style="font-size:13px;font-weight:500;color:var(--ink);">${esc(ev.content||'내용없음')}</div>
-          <div style="font-size:11px;color:var(--ink3);margin-top:1px;">${cat.label} · ${ev.startTime||ev.time||''}</div>
+          <div style="font-size:11px;color:var(--ink3);margin-top:1px;display:flex;align-items:center;gap:5px;">
+            ${cat.label} · ${ev.startTime||ev.time||''}
+            ${dayLabel?`<span style="font-size:10px;padding:1px 7px;border-radius:999px;background:var(--sand2);color:var(--ink3);font-weight:500;">${dayLabel}</span>`:''}
+          </div>
         </div>
         <div style="text-align:right;">
         ${ev.costCurrency&&ev.costCurrency!=='KRW'
