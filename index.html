@@ -1752,7 +1752,7 @@ function renderMobTable(){
                   onclick="event.stopPropagation();openTimePopup('${r.id}','${activeDayKey}',this)">
                   <i class="ti ti-clock" style="font-size:10px;"></i> ${timeDisp}
                 </div>
-                ${(r.cost||r.costLocal)?`<span style="font-size:11px;color:var(--terra);font-weight:500;white-space:nowrap;">${r.cost?'₩'+fmtCost(r.cost):''}${r.costLocal&&r.costCurrency&&r.costCurrency!=='KRW'?(r.cost?' · ':'')+getCurSymbol(r.costCurrency)+fmtLocal(r.costLocal):''}</span>`:''}
+                ${(r.cost||r.costLocal)?`<span style="font-size:11px;color:var(--terra);font-weight:500;white-space:nowrap;">${r.costCurrency&&r.costCurrency!=='KRW'?getCurSymbol(r.costCurrency)+fmtLocal(r.costLocal||0):'₩'+fmtCost(r.cost||0)}</span>`:''}
               </div>
             </div>
             <i class="ti ti-chevron-${isExpanded?'up':'down'}" style="font-size:15px;color:#CCC;flex-shrink:0;"></i>
@@ -2403,9 +2403,11 @@ function openTimePopup(rowId,dk,anchorEl){
   closeTimePopup();
   const trip=getTrip(currentId),r=(trip.events[dk]||[]).find(r=>r.id===rowId);if(!r)return;
   const st=r.startTime||r.time||'09:00',et=r.endTime||TIMES[Math.min(t2i(st)+2,TIMES.length-1)];
+  const dayKeys=Object.keys(trip.events||{}).sort();
   if(anchorEl)anchorEl.classList.add('time-cell-active');
   const popup=document.createElement('div');popup.className='time-popup';popup.id='timePopup';
-  popup.innerHTML=`<div class="time-popup-title">시간 범위 설정</div>
+  popup.innerHTML=`<div class="time-popup-title">날짜·시간 설정</div>
+    <div class="time-popup-row"><span class="time-popup-label">날짜</span><select class="time-popup-sel" id="tp-d">${dayKeys.map((d,i)=>`<option value="${d}"${d===dk?' selected':''}>Day ${i+1} (${dKR(d)})</option>`).join('')}</select></div>
     <div class="time-popup-row"><span class="time-popup-label">시작</span><select class="time-popup-sel" id="tp-s">${TIMES.map(t=>`<option value="${t}"${t===st?' selected':''}>${t}</option>`).join('')}</select></div>
     <div class="time-popup-row"><span class="time-popup-label">종료</span><select class="time-popup-sel" id="tp-e"><option value="">—</option>${TIMES.map(t=>`<option value="${t}"${t===et?' selected':''}>${t}</option>`).join('')}</select></div>
     <div class="time-popup-btns"><button class="time-popup-cancel" id="tpCancel">취소</button><button class="time-popup-confirm" id="tpConfirm">확인</button></div>`;
@@ -2413,14 +2415,25 @@ function openTimePopup(rowId,dk,anchorEl){
   _tp={rowId,dk,el:anchorEl};
   document.getElementById('tp-s').addEventListener('change',function(){const si=t2i(this.value),es=document.getElementById('tp-e');if(!es.value||t2i(es.value)<=si)es.value=TIMES[Math.min(si+2,TIMES.length-1)];});
   document.getElementById('tpConfirm').addEventListener('click',()=>{
+    const newDk=document.getElementById('tp-d').value;
     const st2=document.getElementById('tp-s').value,et2=document.getElementById('tp-e').value;
-    const r2=(getTrip(currentId).events[dk]||[]).find(r=>r.id===rowId);
-    if(r2){r2.startTime=st2;r2.time=st2;r2.endTime=et2;}
+    const tripNow=getTrip(currentId);
+    const r2=(tripNow.events[dk]||[]).find(r=>r.id===rowId);
+    if(r2){
+      r2.startTime=st2;r2.time=st2;r2.endTime=et2;
+      if(newDk!==dk){
+        // 다른 날짜로 이동: 기존 배열에서 제거하고 새 날짜 배열에 추가
+        tripNow.events[dk]=tripNow.events[dk].filter(e=>e.id!==rowId);
+        if(!tripNow.events[newDk])tripNow.events[newDk]=[];
+        tripNow.events[newDk].push(r2);
+        activeDayKey=newDk;
+      }
+    }
     persist();closeTimePopup();renderAll();
   });
   document.getElementById('tpCancel').addEventListener('click',closeTimePopup);
   if(isMobile()){popup.style.position='fixed';popup.style.top='50%';popup.style.left='50%';popup.style.transform='translate(-50%,-50%)';}
-  else if(anchorEl){const rect=anchorEl.getBoundingClientRect();let top=rect.bottom+4,left=rect.left;if(left+230>window.innerWidth-8)left=window.innerWidth-238;if(top+180>window.innerHeight-8)top=rect.top-184;popup.style.top=top+'px';popup.style.left=left+'px';}
+  else if(anchorEl){const rect=anchorEl.getBoundingClientRect();let top=rect.bottom+4,left=rect.left;if(left+230>window.innerWidth-8)left=window.innerWidth-238;if(top+220>window.innerHeight-8)top=rect.top-224;popup.style.top=top+'px';popup.style.left=left+'px';}
 }
 
 function closeTimePopup(){
