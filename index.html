@@ -1707,7 +1707,12 @@ function mobClAddSugg(evId,text){
 }
 
 function renderMobTable(){
-  const trip=getTrip(currentId),evts=trip.events[activeDayKey]||[];
+  const trip=getTrip(currentId);
+  const evts=[...(trip.events[activeDayKey]||[])].sort((a,b)=>{
+    const ta=a.startTime||a.time||'00:00';
+    const tb=b.startTime||b.time||'00:00';
+    return ta.localeCompare(tb);
+  });
   const expandedId=window._mobExpandedId||null;
   const catOpts=[
     {val:'eat',label:'🍽 식사'},{val:'move',label:'🚗 이동'},{val:'see',label:'🔭 관광'},
@@ -2156,7 +2161,12 @@ function updateBadge(){
 
 /* ── 데스크탑 렌더 ── */
 function renderDeskTable(){
-  const trip=getTrip(currentId),evts=trip.events[activeDayKey]||[];
+  const trip=getTrip(currentId);
+  const evts=[...(trip.events[activeDayKey]||[])].sort((a,b)=>{
+    const ta=a.startTime||a.time||'00:00';
+    const tb=b.startTime||b.time||'00:00';
+    return ta.localeCompare(tb);
+  });
   let total=0;
   const catOpts=[{val:'eat',label:'🍽 식사'},{val:'move',label:'🚗 이동'},{val:'see',label:'🔭 관광'},{val:'rest',label:'🛏 숙박'},{val:'etc',label:'• 기타'}];
   const transportOpts=['—','도보','버스','지하철','택시/우버','자차','렌터카','기차','비행기','배/선박'];
