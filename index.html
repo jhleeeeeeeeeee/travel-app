@@ -1559,11 +1559,18 @@ function mobStartEdit(id,field){
 
 function mobFmtCostInput(inp){
   const cur=inp.dataset.cur;
-  const raw=parseCostInput(inp.value);
-  if(raw>0){
-    inp.value = cur==='KRW' ? fmtCost(raw) : fmtLocal(raw);
+  if(cur==='KRW'){
+    const raw=parseCostInput(inp.value);
+    inp.value = raw>0 ? fmtCost(raw) : inp.value.replace(/[^0-9]/g,'');
   } else {
-    inp.value = inp.value.replace(/[^0-9.]/g,'');
+    let v = inp.value.replace(/,/g,'').replace(/[^0-9.]/g,'');
+    const firstDot = v.indexOf('.');
+    if(firstDot !== -1){
+      v = v.slice(0,firstDot+1) + v.slice(firstDot+1).replace(/\./g,'');
+    }
+    const [intPart, decPart] = v.split('.');
+    const intFormatted = intPart ? intPart.replace(/\B(?=(\d{3})+(?!\d))/g,',') : '';
+    inp.value = decPart !== undefined ? intFormatted+'.'+decPart : intFormatted;
   }
 }
 
@@ -3143,13 +3150,25 @@ function parseCostInput(val){
 
 async function onEvtCostInput(){
   const inp = document.getElementById('evtCost');
-  // 천단위 쉼표 자동 포맷 (커서 위치 보존)
-  const raw = parseCostInput(inp.value);
   const isDecimal = _evtCurMode === 'LOCAL';
-  const formatted = isDecimal ? fmtLocal(raw) : fmtCost(raw);
-  if(raw>0) inp.value = formatted; else inp.value = inp.value.replace(/[^0-9.]/g,'');
+  if(isDecimal){
+    // 소수점 입력 중에는 천단위 쉼표만 적용, 소수점 자체는 건드리지 않음
+    let v = inp.value.replace(/,/g,'').replace(/[^0-9.]/g,'');
+    // 소수점이 2개 이상이면 첫번째만 유지
+    const firstDot = v.indexOf('.');
+    if(firstDot !== -1){
+      v = v.slice(0,firstDot+1) + v.slice(firstDot+1).replace(/\./g,'');
+    }
+    const [intPart, decPart] = v.split('.');
+    const intFormatted = intPart ? intPart.replace(/\B(?=(\d{3})+(?!\d))/g,',') : '';
+    inp.value = decPart !== undefined ? intFormatted+'.'+decPart : intFormatted;
+  } else {
+    // KRW(정수)는 즉시 쉼표 포맷
+    const raw = parseCostInput(inp.value);
+    inp.value = raw>0 ? fmtCost(raw) : inp.value.replace(/[^0-9]/g,'');
+  }
 
-  const val = raw;
+  const val = parseCostInput(inp.value);
   if(!val || _evtLocalCur === 'KRW') return;
   const convertEl = document.getElementById('evtCostConvert');
   const txtEl = document.getElementById('evtCostConvertTxt');
