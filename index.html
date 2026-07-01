@@ -1781,7 +1781,7 @@ function renderMobTable(){
               const _mainAmt=_isKRW?(r.cost?fmtCost(r.cost):'0'):(r.costLocal?fmtLocal(r.costLocal):'0');
               const _mainSym=_isKRW?'₩':(curSym);
               const _mainField=_editVal
-                ?`<input id="mobFldInp_${_eid}_costMain" data-eid="${_eid}" data-edk="${_edk}" data-cur="${_dCur}" type="text" inputmode="numeric" value="${_isKRW?(r.cost?fmtCost(r.cost):''):(r.costLocal?fmtLocal(r.costLocal):'')}" oninput="mobFmtCostInput(this)" onchange="mobSaveCostField(this)" onclick="event.stopPropagation()" style="font-size:15px;font-weight:500;border:none;border-bottom:1.5px solid var(--terra);outline:none;background:transparent;width:120px;font-family:var(--font-sans);color:var(--ink);" autofocus>`
+                ?`<input id="mobFldInp_${_eid}_costMain" data-eid="${_eid}" data-edk="${_edk}" data-cur="${_dCur}" type="text" inputmode="numeric" value="${_isKRW?(r.cost?fmtCost(r.cost):''):(r.costLocal?fmtLocal(r.costLocal):'')}" oninput="mobFmtCostInput(this)" onchange="mobSaveCostField(this)" onblur="mobSaveCostField(this)" onclick="event.stopPropagation()" style="font-size:15px;font-weight:500;border:none;border-bottom:1.5px solid var(--terra);outline:none;background:transparent;width:120px;font-family:var(--font-sans);color:var(--ink);" autofocus>`
                 :`<span onclick="event.stopPropagation();window._mobEditField={id:'${_eid}',field:'costMain'};renderMobTable();" style="cursor:pointer;font-size:15px;font-weight:500;color:var(--ink);border-bottom:1px dashed var(--sand3);">${_mainSym}${_mainAmt}</span>`;
               // 반대쪽 환산 표시
               const _subAmt=_isKRW
@@ -2593,6 +2593,11 @@ document.addEventListener('click',function(e){
   const mobCardHd=t.closest('.mob-card-header');
   if(mobCardHd){
     const cid=mobCardHd.dataset.cardid;
+    // 카드 닫히기 전 편집 중인 비용 필드 자동 저장
+    if(window._mobExpandedId===cid){
+      const inp=document.getElementById('mobFldInp_'+cid+'_costMain');
+      if(inp) mobSaveCostField(inp);
+    }
     window._mobExpandedId=(window._mobExpandedId===cid)?null:cid;
     renderMobTable();return;
   }
