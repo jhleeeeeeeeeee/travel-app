@@ -3978,18 +3978,33 @@ async function shareTrip(tripId){
   if(!trip.shareId) trip.shareId='s'+Math.random().toString(36).slice(2,10);
   localStorage.setItem('tpv5_trips',JSON.stringify(trips));
 
-  // Supabase에 공유 데이터 저장 (실패해도 링크 복사는 진행)
+  // Supabase에 공유 데이터 저장
+  let saveOk=false;
   try{
-    await sbFetch('/rest/v1/shared_trips',{
+    const res=await fetch(SB_URL+'/rest/v1/shared_trips',{
       method:'POST',
-      headers:{'Prefer':'resolution=merge-duplicates,return=minimal'},
+      headers:{
+        'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,
+        'Content-Type':'application/json',
+        'Prefer':'resolution=merge-duplicates,return=minimal'
+      },
       body:JSON.stringify({id:trip.shareId,trip:trip,updated_at:new Date().toISOString()})
     });
+    console.log('[Share] 저장 HTTP 상태:', res.status);
+    const body=await res.text();
+    console.log('[Share] 저장 응답:', body);
+    saveOk=res.ok;
+    if(!res.ok){
+      alert('공유 저장 실패 ('+res.status+'): '+body+'\n\nSupabase 대시보드에서 shared_trips 테이블의 RLS 정책을 확인해주세요.\n(anon 키로 SELECT/INSERT 허용 필요)');
+      return;
+    }
   } catch(e){
     console.error('[Share] 저장 오류:', e);
+    alert('공유 저장 중 오류가 발생했어요: '+e.message);
+    return;
   }
 
-  // 저장 성공 여부와 관계없이 링크 복사 + 토스트
+  // 저장 성공 시 링크 복사 + 토스트
   const url=location.origin+location.pathname+'?share='+trip.shareId;
   try{
     if(navigator.clipboard){
