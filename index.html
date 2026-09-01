@@ -3972,57 +3972,27 @@ if('serviceWorker' in navigator){
   });
 }
 
-/* ── 여행 공유 ── */
+/* ── 여행 공유 (URL Base64 인코딩 방식) ── */
 async function shareTrip(tripId){
-  const trip=getTrip(tripId); if(!trip) return;
-  if(!trip.shareId) trip.shareId='s'+Math.random().toString(36).slice(2,10);
-  localStorage.setItem('tpv5_trips',JSON.stringify(trips));
-
-  // Supabase에 공유 데이터 저장
-  let saveOk=false;
+  const trip=getTrip(tripId);if(!trip)return;
   try{
-    const res=await fetch(SB_URL+'/rest/v1/shared_trips',{
-      method:'POST',
-      headers:{
-        'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,
-        'Content-Type':'application/json',
-        'Prefer':'resolution=merge-duplicates,return=minimal'
-      },
-      body:JSON.stringify({id:trip.shareId,trip:trip,updated_at:new Date().toISOString()})
-    });
-    console.log('[Share] 저장 HTTP 상태:', res.status);
-    const body=await res.text();
-    console.log('[Share] 저장 응답:', body);
-    saveOk=res.ok;
-    if(!res.ok){
-      alert('공유 저장 실패 ('+res.status+'): '+body+'\n\nSupabase 대시보드에서 shared_trips 테이블의 RLS 정책을 확인해주세요.\n(anon 키로 SELECT/INSERT 허용 필요)');
-      return;
-    }
-  } catch(e){
-    console.error('[Share] 저장 오류:', e);
-    alert('공유 저장 중 오류가 발생했어요: '+e.message);
-    return;
+    const json=JSON.stringify(trip);
+    const encoded=btoa(encodeURIComponent(json).replace(/%([0-9A-F]{2})/g,(_,p)=>String.fromCharCode('0x'+p)));
+    const url=location.origin+location.pathname+'?trip='+encoded;
+    try{
+      if(navigator.clipboard) await navigator.clipboard.writeText(url);
+      else prompt('공유 링크:', url);
+    }catch(e){ prompt('공유 링크:', url); }
+    showShareToast('링크가 복사됐습니다! 📋');
+  }catch(e){
+    alert('공유 링크 생성 실패: '+e.message);
   }
-
-  // 저장 성공 시 링크 복사 + 토스트
-  const url=location.origin+location.pathname+'?share='+trip.shareId;
-  try{
-    if(navigator.clipboard){
-      await navigator.clipboard.writeText(url);
-    } else {
-      prompt('공유 링크:', url);
-    }
-  } catch(e){
-    prompt('공유 링크:', url);
-  }
-  showShareToast('링크가 복사됐습니다! 📋');
 }
 
 function showShareToast(msg){
   let t=document.getElementById('shareToast');
   if(!t){
-    t=document.createElement('div');
-    t.id='shareToast';
+    t=document.createElement('div');t.id='shareToast';
     t.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#1C1A14;color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;font-family:DM Sans,sans-serif;z-index:9999;transition:opacity .3s;white-space:nowrap;';
     document.body.appendChild(t);
   }
@@ -4031,54 +4001,29 @@ function showShareToast(msg){
 }
 
 // 공유 링크로 접속 시 읽기전용 뷰
-async function loadSharedTrip(shareId){
+function loadSharedTrip(encoded){
   try{
-    const data=await sbFetch('/rest/v1/shared_trips?id=eq.'+shareId+'&select=trip');
-    if(!data||!data.length){
-      document.body.innerHTML='<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;font-family:DM Sans,sans-serif;color:#6B6550;gap:12px;"><div style="font-size:40px;">🗺</div><div style="font-size:16px;font-weight:500;color:#1C1A14;">공유 링크를 찾을 수 없습니다</div><div style="font-size:13px;">링크가 만료됐거나 잘못된 주소입니다</div></div>';
-      return;
-    }
-    const trip=data[0].trip;
-
-    // 읽기전용 설정
-    window._readOnly = true;
-    trips = [trip];
-    currentId = trip.id;
-    activeDayKey = trip.start;
-
-    // 읽기전용 배너
-    const banner=document.createElement('div');
-    banner.id='readOnlyBanner';
+    const json=decodeURIComponent(atob(encoded).split('').map(c=>'%'+('00'+c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+    const trip=JSON.parse(json);
+    if(!trip||!trip.id) throw new Error('데이터 파싱 실패');
+    window._readOnly=true;trips=[trip];currentId=trip.id;activeDayKey=trip.start;
+    const banner=document.createElement('div');banner.id='readOnlyBanner';
     banner.style.cssText='position:fixed;top:0;left:0;right:0;padding:6px;text-align:center;font-size:12px;font-family:DM Sans,sans-serif;font-weight:500;z-index:9999;background:#2A6B7C;color:#fff;';
     banner.innerHTML='🔒 읽기 전용 &nbsp;·&nbsp; '+esc(trip.name||'여행')+'<span style="opacity:.6;font-size:11px;margin-left:8px;">'+((trip.start||'')+'~'+(trip.end||''))+'</span>';
     document.body.appendChild(banner);
-
-    // 플래너 열기 (showPage 포함)
     openTrip(trip.id);
-
-    // 데스크탑이면 강제 렌더링
     setTimeout(()=>{
-      if(!isMobile()){
-        const split=document.getElementById('desktopSplit');
-        if(split) split.style.display='flex';
-        renderDeskTable();renderDeskTimeline();renderDeskChecklist();
-      }
+      if(!isMobile()){const split=document.getElementById('desktopSplit');if(split)split.style.display='flex';renderDeskTable();renderDeskTimeline();renderDeskChecklist();}
     },200);
-
-    // 수정 불가 UI 처리
     setTimeout(()=>{
-      ['saveBtn','btnAddRow'].forEach(id=>{
-        const el=document.getElementById(id);if(el)el.style.display='none';
-      });
+      ['saveBtn','btnAddRow'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
       document.querySelectorAll('.row-del-btn,.tc-del,.tc-act').forEach(b=>b.style.display='none');
-      const backBtn=document.getElementById('btnBackPlanner');
-      if(backBtn) backBtn.style.display='none';
-      const planner=document.getElementById('plannerPage');
-      if(planner) planner.style.paddingTop='30px';
+      const backBtn=document.getElementById('btnBackPlanner');if(backBtn)backBtn.style.display='none';
+      const planner=document.getElementById('plannerPage');if(planner)planner.style.paddingTop='30px';
     },500);
-  } catch(e){
+  }catch(e){
     console.error('[Share] 로드 오류:', e);
-    document.body.innerHTML='<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;font-family:DM Sans,sans-serif;color:#6B6550;gap:12px;"><div style="font-size:40px;">⚠️</div><div style="font-size:16px;font-weight:500;color:#1C1A14;">공유 링크 로드 실패</div><div style="font-size:13px;">잠시 후 다시 시도해주세요</div></div>';
+    document.body.innerHTML='<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;font-family:DM Sans,sans-serif;color:#6B6550;gap:12px;"><div style="font-size:40px;">🗺</div><div style="font-size:16px;font-weight:500;color:#1C1A14;">공유 링크를 찾을 수 없습니다</div><div style="font-size:13px;">링크가 만료됐거나 잘못된 주소입니다</div></div>';
   }
 }
 
@@ -4091,7 +4036,9 @@ window.addEventListener('DOMContentLoaded',async()=>{
   // 공유 링크 감지
   const urlParams=new URLSearchParams(location.search);
   const shareId=urlParams.get('share');
-  if(shareId){ loadSharedTrip(shareId); return; }
+  const tripEncoded=urlParams.get('trip');
+  if(tripEncoded){ loadSharedTrip(tripEncoded); return; }
+  if(shareId){ loadSharedTrip(shareId); return; } // 구버전 링크 호환
 
   // 페이지 상태 먼저 읽기 (showPage 호출 전)
   const savedPage=sessionStorage.getItem('tpv5_page')||'archivePage';
