@@ -4005,15 +4005,18 @@ function showShareToast(msg){
 
 // 공유 링크로 접속 시 읽기전용 뷰
 function loadSharedTrip(encoded){
+  console.log('[Share] loadSharedTrip 시작, encoded length:', encoded?.length);
   try{
-    // URL-safe Base64 → UTF-8 바이트 → 문자열
     const b64=encoded.replace(/-/g,'+').replace(/_/g,'/');
     const padded=b64+('===='.slice(0,(4-b64.length%4)%4));
+    console.log('[Share] atob 시도...');
     const bin=atob(padded);
     const bytes=new Uint8Array(bin.length);
     for(let i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i);
     const json=new TextDecoder().decode(bytes);
+    console.log('[Share] json 길이:', json.length, 'json 앞부분:', json.slice(0,50));
     const trip=JSON.parse(json);
+    console.log('[Share] trip.id:', trip?.id, 'trip.name:', trip?.name);
     if(!trip||!trip.id) throw new Error('데이터 파싱 실패');
     window._readOnly=true;trips=[trip];currentId=trip.id;activeDayKey=trip.start;
     const banner=document.createElement('div');banner.id='readOnlyBanner';
@@ -4048,6 +4051,7 @@ window.addEventListener('DOMContentLoaded',async()=>{
   const urlParams=new URLSearchParams(location.search);
   const tripEncoded=hashMatch?hashMatch[1]:urlParams.get('trip');
   const shareId=urlParams.get('share');
+  console.log('[Share] hash:', hash.slice(0,30), 'hashMatch:', !!hashMatch, 'tripEncoded len:', tripEncoded?.length);
   if(tripEncoded){ loadSharedTrip(tripEncoded); return; }
   if(shareId){ loadSharedTrip(shareId); return; }
 
