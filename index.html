@@ -3977,8 +3977,11 @@ async function shareTrip(tripId){
   const trip=getTrip(tripId);if(!trip)return;
   try{
     const json=JSON.stringify(trip);
-    const encoded=btoa(encodeURIComponent(json).replace(/%([0-9A-F]{2})/g,(_,p)=>String.fromCharCode('0x'+p)));
-    const url=location.origin+location.pathname+'?trip='+encoded;
+    const bytes=new TextEncoder().encode(json);
+    let bin='';bytes.forEach(b=>bin+=String.fromCharCode(b));
+    const encoded=btoa(bin).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+    // 해시(#)에 담으면 서버로 전달 안 됨 → URL 처리 문제 없음
+    const url=location.origin+location.pathname+'#trip='+encoded;
     try{
       if(navigator.clipboard) await navigator.clipboard.writeText(url);
       else prompt('공유 링크:', url);
@@ -4003,7 +4006,13 @@ function showShareToast(msg){
 // 공유 링크로 접속 시 읽기전용 뷰
 function loadSharedTrip(encoded){
   try{
-    const json=decodeURIComponent(atob(encoded).split('').map(c=>'%'+('00'+c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+    // URL-safe Base64 → UTF-8 바이트 → 문자열
+    const b64=encoded.replace(/-/g,'+').replace(/_/g,'/');
+    const padded=b64+('===='.slice(0,(4-b64.length%4)%4));
+    const bin=atob(padded);
+    const bytes=new Uint8Array(bin.length);
+    for(let i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i);
+    const json=new TextDecoder().decode(bytes);
     const trip=JSON.parse(json);
     if(!trip||!trip.id) throw new Error('데이터 파싱 실패');
     window._readOnly=true;trips=[trip];currentId=trip.id;activeDayKey=trip.start;
@@ -4033,12 +4042,14 @@ window.addEventListener('DOMContentLoaded',async()=>{
   setupSwipeNav('mobPaneTl');
   setupSwipeNav('mobPaneExp');
 
-  // 공유 링크 감지
+  // 공유 링크 감지 (해시 방식 + 쿼리 방식 모두 지원)
+  const hash=location.hash||'';
+  const hashMatch=hash.match(/^#trip=(.+)$/);
   const urlParams=new URLSearchParams(location.search);
+  const tripEncoded=hashMatch?hashMatch[1]:urlParams.get('trip');
   const shareId=urlParams.get('share');
-  const tripEncoded=urlParams.get('trip');
   if(tripEncoded){ loadSharedTrip(tripEncoded); return; }
-  if(shareId){ loadSharedTrip(shareId); return; } // 구버전 링크 호환
+  if(shareId){ loadSharedTrip(shareId); return; }
 
   // 페이지 상태 먼저 읽기 (showPage 호출 전)
   const savedPage=sessionStorage.getItem('tpv5_page')||'archivePage';
